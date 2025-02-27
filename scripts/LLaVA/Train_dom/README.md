@@ -17,4 +17,4 @@ MOE训练：
 `bash <script_name> CoIN True 8`
 
 不使用先前任务训练：
-`bash <script_name> CoIN False`
+`bash <script_name> CoIN`

@@ -5,15 +5,12 @@ import re
 from evaluate import load
 
 
-
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--annotation-file', type=str, default='./LLaVA/playground/Instructions_slim/OCRVQA/test_1.json')
     parser.add_argument('--result-file', type=str, default='./LLaVA/results/CoIN_slim_new_0.8/OCRVQA/Finetune/merge.jsonl')
     parser.add_argument('--output-dir', type=str, default='./LLaVA/results/CoIN_slim_new_0.8/OCRVQA/Finetune')
     return parser.parse_args()
-
-
 
 def eval_single(annotation_file, result_file):
     bertscore = load("bertscore", module_type="metric", cache_dir="metrics")
@@ -28,13 +25,13 @@ def eval_single(annotation_file, result_file):
     for result in results:
         annotation = annotations[result['question_id']]
         ground_truth = annotation['answer']
-        score = bertscore.compute(predictions=annotation, references=ground_truth, lang='zh')['f1']
-        right += score
+        score = bertscore.compute(predictions=[result['text']], references=[ground_truth], lang='zh')['f1']
+        right += score[0]
         pred_list.append(dict(
-            question=annotation['question'],
-            annotation=annotation,
+            question=annotation['text'],
+            prediction=result['text'],
             ground_truth=ground_truth,
-            score=score,
+            score=score[0],
         ))
         # if 'Unanswerable' in result['text'] :
         #     continue
