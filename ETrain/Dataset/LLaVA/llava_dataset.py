@@ -372,14 +372,14 @@ def preprocess(
     3. Tokenize the concatenated conversation;
     4. Make a deepcopy as the target. Mask human words with IGNORE_INDEX.
     """
-    # if conversation_lib.default_conversation.sep_style == conversation_lib.SeparatorStyle.PLAIN:
-    #     return preprocess_plain(sources, tokenizer)
-    # if conversation_lib.default_conversation.sep_style == conversation_lib.SeparatorStyle.LLAMA_2:
-    #     return preprocess_llama_2(sources, tokenizer, has_image=has_image)
-    # if conversation_lib.default_conversation.version.startswith("v1"):
-    #     return preprocess_v1(sources, tokenizer, has_image=has_image)
-    # if conversation_lib.default_conversation.version == "mpt":
-    #     return preprocess_mpt(sources, tokenizer)
+    if conversation_lib.default_conversation.sep_style == conversation_lib.SeparatorStyle.PLAIN:
+        return preprocess_plain(sources, tokenizer)
+    if conversation_lib.default_conversation.sep_style == conversation_lib.SeparatorStyle.LLAMA_2:
+        return preprocess_llama_2(sources, tokenizer, has_image=has_image)
+    if conversation_lib.default_conversation.version.startswith("v1"):
+        return preprocess_v1(sources, tokenizer, has_image=has_image)
+    if conversation_lib.default_conversation.version == "mpt":
+        return preprocess_mpt(sources, tokenizer)
     # add end signal and concatenate together
     conversations = []
     for source in sources:
@@ -453,6 +453,10 @@ class LazySupervisedDataset(Dataset):
 
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         sources = self.list_data_dict[i]
+        if 'question_id' in sources:
+            question_id = sources['question_id']
+        else:
+            question_id = sources['id']
         if isinstance(i, int):
             sources = [sources]
         assert len(sources) == 1, "Don't know why it is wrapped to a list"  # FIXME
@@ -503,9 +507,7 @@ class LazySupervisedDataset(Dataset):
             has_image=('image' in self.list_data_dict[i]))
         if isinstance(i, int):
             data_dict = dict(input_ids=data_dict["input_ids"][0],
-                             labels=data_dict["labels"][0],
-                            #  routing_weight=data_dict["routing_weight"][0],
-                             prompts=data_dict['prompts'][0])
+                             labels=data_dict["labels"][0])
 
         # image exist in the data
         if 'image' in self.list_data_dict[i]:
@@ -514,6 +516,7 @@ class LazySupervisedDataset(Dataset):
             # image does not exist in the data, but the model is multimodal
             crop_size = self.data_args.image_processor.crop_size
             data_dict['image'] = torch.zeros(3, crop_size['height'], crop_size['width'])
+        data_dict['question_id'] = question_id
         return data_dict
 
 
@@ -526,8 +529,8 @@ class DataCollatorForSupervisedDataset(object):
     tokenizer: transformers.PreTrainedTokenizer
 
     def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
-        input_ids, labels, prompts = tuple([instance[key] for instance in instances]
-                                  for key in ("input_ids", "labels", "prompts"))
+        input_ids, labels, question_ids = tuple([instance[key] for instance in instances]
+                                  for key in ("input_ids", "labels", "question_id"))
         input_ids = torch.nn.utils.rnn.pad_sequence(
             input_ids,
             batch_first=True,
@@ -541,8 +544,7 @@ class DataCollatorForSupervisedDataset(object):
             input_ids=input_ids,
             labels=labels,
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
-            # routing_weights=torch.Tensor([0]*8).bfloat16().unsqueeze(0),
-            prompts=prompts
+            question_ids=question_ids
         )
 
         if 'image' in instances[0]:
