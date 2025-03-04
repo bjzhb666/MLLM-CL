@@ -31,34 +31,33 @@ else
 fi
 DATA_PATH=/data/hongbo_zhao/data/Domain_data
 RESULT_DIR="./results/CoIN/$MODELBASE/$MODELNAME"
-# RESULT_DIR="./results/CoIN/LLaVA/OCRVQA"
 
-# for IDX in $(seq 0 $((CHUNKS-1))); do
-#     CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_finvis \
-#         --model-path $MODELPATH \
-#         --model-base ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
-#         --question-file $DATA_PATH/FinVis/test.json \
-#         --image-folder $DATA_PATH/FinVis/PretrainData/images \
-#         --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
-#         --num-chunks $CHUNKS \
-#         --chunk-idx $IDX \
-#         --temperature 0 \
-#         --conv-mode vicuna_v1 &
-# done
+for IDX in $(seq 0 $((CHUNKS-1))); do
+    CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_finvis \
+        --model-path $MODELPATH \
+        --model-base ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
+        --question-file $DATA_PATH/FinVis/test.json \
+        --image-folder $DATA_PATH/FinVis/PretrainData/images \
+        --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
+        --num-chunks $CHUNKS \
+        --chunk-idx $IDX \
+        --temperature 0 \
+        --conv-mode vicuna_v1 &
+done
 
-# wait
+wait
 
 output_file=$RESULT_DIR/$STAGE/merge.jsonl
 
-# # Clear out the output file if it exists.
-# > "$output_file"
+# Clear out the output file if it exists.
+> "$output_file"
 
-# # Loop through the indices and concatenate each file.
-# for IDX in $(seq 0 $((CHUNKS-1))); do
-#     cat $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl >> "$output_file"
-# done
+# Loop through the indices and concatenate each file.
+for IDX in $(seq 0 $((CHUNKS-1))); do
+    cat $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl >> "$output_file"
+done
 
 python -m ETrain.Eval.LLaVA.CoIN.eval_finvis \
     --annotation-file $DATA_PATH/FinVis/test.json \
     --result-file $output_file \
-    --output-dir $RESULT_DIR/$STAGE \
+    --output-dir $RESULT_DIR/$STAGE

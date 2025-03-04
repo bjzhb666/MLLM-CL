@@ -25,6 +25,7 @@ fi
 # PROMPT_VERSION="llava_llama_2"
 # MODEL_VERSION="Llama-2-7b-chat-hf"
 ################## LLaMA-2 ##################
+DATA_PATH=/data/hongbo_zhao/data/Domain_data
 
     # --previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/VQAv2_llava_lora \
 deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/LLaVA/train_mem.py \
@@ -34,8 +35,8 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     $PREVIOUS_TASK \
     --model_name_or_path ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
     --version $PROMPT_VERSION \
-    --data_path ../DatasetCoIN/Medical/train60k.json \
-    --image_folder ../DatasetCoIN/Medical \
+    --data_path $DATA_PATH/Medical/data/train60k.json \
+    --image_folder $DATA_PATH/Medical/data \
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
@@ -46,12 +47,12 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --bf16 True \
     --output_dir ./checkpoints/LLaVA/$BASE_NAME/Medical_llava_lora \
     --num_train_epochs 1 \
-    --per_device_train_batch_size 8 \
+    --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \
-    --gradient_accumulation_steps 8 \
+    --gradient_accumulation_steps 2 \
     --evaluation_strategy "no" \
     --save_strategy "epoch" \
-    --learning_rate 2e-4 \
+    --learning_rate 2e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \
@@ -61,4 +62,5 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --gradient_checkpointing True \
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
-    --report_to wandb
+    --report_to wandb \
+    --run_name "LoRA_Med_bs4ac2_lr2e-5"

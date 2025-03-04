@@ -29,14 +29,14 @@ else
 fi
 
 RESULT_DIR="./results/CoIN/$MODELBASE/$MODELNAME"
-# RESULT_DIR="./results/CoIN/LLaVA/OCRVQA"
+DATA_PATH=/data/hongbo_zhao/data/Domain_data
 
 for IDX in $(seq 0 $((CHUNKS-1))); do
     CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_ai2d \
         --model-path $MODELPATH \
         --model-base ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
-        --question-file ../DatasetCoIN/AD/test1.json \
-        --image-folder ../DatasetCoIN/AD \
+        --question-file $DATA_PATH/AD/DriveLM/test.json \
+        --image-folder $DATA_PATH/AD/DriveLM \
         --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
         --num-chunks $CHUNKS \
         --chunk-idx $IDX \
@@ -57,6 +57,6 @@ for IDX in $(seq 0 $((CHUNKS-1))); do
 done
 
 python -m ETrain.Eval.LLaVA.CoIN.eval_ai2d \
-    --annotation-file ../DatasetCoIN/AD/test1.json \
+    --annotation-file $DATA_PATH/AD/DriveLM/test.json \
     --result-file $output_file \
     --output-dir $RESULT_DIR/$STAGE \
