@@ -18,7 +18,6 @@ def eval_single(annotation_file, result_file):
     annotations = {data['question_id']: data for data in annotations}
     results = [json.loads(line) for line in open(result_file)]
 
-    pred_list = []
     total = len(results)
     right = 0
     for result in results:
@@ -26,15 +25,15 @@ def eval_single(annotation_file, result_file):
         ground_truth = annotation['answer']
         if 'Unanswerable' in result['text'] :
             continue
-        if result['text'].lower() == ground_truth.lower():
+        if result['text'].lower() == ground_truth.lower(): # TODO: need to check which rules to use
             right += 1
 
-    print('Samples: {}\nAccuracy: {:.2f}%\n'.format(len(pred_list), 100. * right / total))
+    print('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
     #将结果写入文件
     if args.output_dir is not None:
         output_file = os.path.join(args.output_dir, 'Result.text')
         with open(output_file, 'w') as f:
-            f.write('Samples: {}\nAccuracy: {:.2f}%\n'.format(len(pred_list), 100. * right / total))
+            f.write('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
 
 if __name__ == "__main__":
     args = get_args()

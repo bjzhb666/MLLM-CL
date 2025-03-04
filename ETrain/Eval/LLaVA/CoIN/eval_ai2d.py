@@ -18,25 +18,43 @@ def eval_single(annotation_file, result_file):
     annotations = {data['question_id']: data for data in annotations}
     results = [json.loads(line) for line in open(result_file)]
 
-    pred_list = []
     total = len(results)
     right = 0
+    pred_list = []
     for result in results:
         annotation = annotations[result['question_id']]
         ground_truth = annotation['answer']
+        problem = result['prompt']
+        image = annotation['image']
         if 'Unanswerable' in result['text'] :
             continue
+        
         pred: str = result['text'].lower()
         gt: str =  ground_truth.lower()
-        if pred.startswith(gt) or gt.startswith(pred):
+        # if pred.startswith(gt) or gt.startswith(pred):
+        #     right += 1
+        if pred == gt:
             right += 1
-
-    print('Samples: {}\nAccuracy: {:.2f}%\n'.format(len(pred_list), 100. * right / total))
+        # save the result as jsonl
+        pred_list.append(dict(
+            question=problem,
+            pred=result['text'].lower(),
+            ground_truth=ground_truth.lower(),
+            image=image,
+            score=1 if pred == gt else 0,
+        ))
+    print('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
     #将结果写入文件
     if args.output_dir is not None:
         output_file = os.path.join(args.output_dir, 'Result.text')
         with open(output_file, 'w') as f:
-            f.write('Samples: {}\nAccuracy: {:.2f}%\n'.format(len(pred_list), 100. * right / total))
+            f.write('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
+        # 将pred_list结果写入jsonl文件
+        output_file = os.path.join(args.output_dir, 'Result.json')
+        with open(output_file, 'w') as f:
+            for item in pred_list:
+                json.dump(item, f)
+                f.write('\n')        
 
 if __name__ == "__main__":
     args = get_args()
