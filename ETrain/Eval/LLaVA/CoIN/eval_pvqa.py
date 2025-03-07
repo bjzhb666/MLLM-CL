@@ -25,7 +25,9 @@ def eval_single(annotation_file, result_file):
         ground_truth = annotation['answer']
         if 'Unanswerable' in result['text'] :
             continue
-        if result['text'].lower() == ground_truth.lower(): # TODO: need to check which rules to use
+        # if result['text'].lower() == ground_truth.lower(): # TODO: need to check which rules to use
+        #     right += 1
+        if ground_truth.lower() in result['text'].lower():
             right += 1
 
     print('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))

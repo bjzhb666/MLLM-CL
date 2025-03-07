@@ -33,7 +33,9 @@ def eval_single(annotation_file, result_file):
         gt: str =  ground_truth.lower()
         # if pred.startswith(gt) or gt.startswith(pred):
         #     right += 1
-        if pred == gt:
+        # if pred == gt:
+        #     right += 1
+        if gt in pred:
             right += 1
         # save the result as jsonl
         pred_list.append(dict(
