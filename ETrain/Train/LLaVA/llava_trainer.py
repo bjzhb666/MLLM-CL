@@ -255,7 +255,8 @@ class LLaVATrainer(Trainer):
                                         output_dir=training_args.output_dir)
 
 
-def load_model_from_previous_task(model, previous_task_model_path):
+def load_model_from_previous_task(model, model_args):
+    previous_task_model_path = model_args.previous_task_model_path
     print('Loading additional LLaVA weights...')
     if os.path.exists(os.path.join(previous_task_model_path, 'non_lora_trainables.bin')):
         non_lora_trainables: dict = torch.load(os.path.join(previous_task_model_path, 'non_lora_trainables.bin'), map_location='cpu')
@@ -273,9 +274,14 @@ def load_model_from_previous_task(model, previous_task_model_path):
     if any(k.startswith('model.model.') for k in non_lora_trainables):
         non_lora_trainables = {(k[6:] if k.startswith('model.') else k): v for k, v in non_lora_trainables.items()}
     model.load_state_dict(non_lora_trainables, strict=False)
-
-    from peft import PeftModel
-    print('Loading LoRA weights...')
+    if model_args.expert_num == None:
+        from peft import PeftModel
+        from peft.utils import WEIGHTS_NAME, set_peft_model_state_dict
+        print('Loading LoRA weights...')
+    else:
+        from CoIN.peft import WEIGHTS_NAME, set_peft_model_state_dict
+        print('Loading MoE LoRA weights...')
+    
     filename = os.path.join(previous_task_model_path, WEIGHTS_NAME)
     adapters_weights = torch.load(filename, map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
     load_result = set_peft_model_state_dict(model, adapters_weights, adapter_name="default")

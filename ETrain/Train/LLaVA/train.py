@@ -134,7 +134,7 @@ def train():
 
     if model_args.previous_task_model_path is not None:
         # load model from previous task
-        load_model_from_previous_task(model, model_args.previous_task_model_path)
+        load_model_from_previous_task(model, model_args)
 
     data_module = create_LLaVA_data_module(tokenizer, data_args, local_rank)
 
