@@ -32,3 +32,5 @@ bash 10_eval_financial.sh Finetune ./checkpoints/LLaVA/CoIN/FinVis_llava_lora Fi
 ## 输出
 
 评估结果将保存在 `./results/CoIN/$MODELBASE/$MODELNAME/$STAGE/merge.jsonl` 文件中。
+
+## 使用

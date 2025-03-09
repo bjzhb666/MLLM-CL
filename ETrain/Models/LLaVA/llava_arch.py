@@ -68,23 +68,13 @@ class LlavaMetaModel:
         self.config.mm_hidden_size = vision_tower.hidden_size
         self.config.mm_vision_select_layer = mm_vision_select_layer
         self.config.mm_vision_select_feature = mm_vision_select_feature
-
-        if self.config.mm_projector_type == "mov_adapter":
-            self.config.topk = self.config.topk_experts = getattr(model_args, "topk_experts", 3)
-            self.config.image_feat_size = getattr(model_args, "image_feat_size", 24)
-            self.config.mm_projector_freeze_text_encoder = getattr(model_args, "mm_projector_freeze_text_encoder", False)
-            self.config.mm_projector_text_encoder = getattr(model_args, "mm_projector_text_encoder", "bert-large-uncased")
-            self.config.expert_channels = getattr(model_args, "expert_channels", [576])
-            # self.config.expert_channels = getattr(model_args, "expert_channels", [1536, 512, 256, 1536, 768, 768, 256, 256])
-            self.config.num_projector_layers = getattr(model_args, "num_projector_layers", 3)
-            self.config.num_routing_tokens = getattr(model_args, "num_routing_tokens", 144)
         
         if getattr(self, 'mm_projector', None) is None:
             self.mm_projector = build_vision_projector(self.config)
         else:
             # In case it is frozen by LoRA
             for p in self.mm_projector.parameters():
-                p.requires_grad = True
+                p.requires_grad = True # Open the mm_projector
 
         if pretrain_mm_mlp_adapter is not None:
             mm_projector_weights = torch.load(pretrain_mm_mlp_adapter, map_location='cpu', weights_only=False)

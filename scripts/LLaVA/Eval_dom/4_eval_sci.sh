@@ -1,6 +1,6 @@
 #!/bin/bash
 
-gpu_list="${CUDA_VISIBLE_DEVICES:-0}" # ,1,2,3,4,5,6,7
+gpu_list="${CUDA_VISIBLE_DEVICES:-0,1,2,3,4,5,6,7}"
 IFS=',' read -ra GPULIST <<< "$gpu_list"
 
 CHUNKS=${#GPULIST[@]}
@@ -12,12 +12,12 @@ else
 fi
 
 if [ ! -n "$2" ] ;then
-    MODELPATH='./checkpoints/LLaVA/CoIN/Medical_llava_lora'
+    MODELPATH='./checkpoints/LLaVA/CoIN/Sci_llava_lora2e-5'
 else
     MODELPATH=$2
 fi
 if [ ! -n "$3" ] ;then
-    MODELNAME='PathVQA_pathvqa'
+    MODELNAME='Sci_sci'
 else
     MODELNAME=$3
 fi
@@ -32,11 +32,11 @@ RESULT_DIR="./results/CoIN/$MODELBASE/$MODELNAME"
 DATA_PATH=/data/hongbo_zhao/data/Domain_data
 
 for IDX in $(seq 0 $((CHUNKS-1))); do
-    CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_pvqa \
+    CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_ai2d \
         --model-path $MODELPATH \
         --model-base ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
-        --question-file $DATA_PATH/Medical/data/test.json \
-        --image-folder $DATA_PATH/Medical/data \
+        --question-file $DATA_PATH/Sci/test.json \
+        --image-folder $DATA_PATH \
         --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
         --num-chunks $CHUNKS \
         --chunk-idx $IDX \
@@ -56,7 +56,7 @@ for IDX in $(seq 0 $((CHUNKS-1))); do
     cat $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl >> "$output_file"
 done
 
-python -m ETrain.Eval.LLaVA.CoIN.eval_pvqa \
-    --annotation-file $DATA_PATH/Medical/data/test.json \
+python -m ETrain.Eval.LLaVA.CoIN.eval_sci \
+    --annotation-file $DATA_PATH/Sci/test.json \
     --result-file $output_file \
     --output-dir $RESULT_DIR/$STAGE \

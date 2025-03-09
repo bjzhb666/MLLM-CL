@@ -47,7 +47,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --group_by_modality_length True \
     --bf16 True \
     --output_dir ./checkpoints/LLaVA/$BASE_NAME/Medical_llava_lora \
-    --num_train_epochs 1 \
+    --num_train_epochs 3 \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \
     --gradient_accumulation_steps 2 \
@@ -64,4 +64,4 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
     --report_to wandb \
-    --run_name "LoRA_Med_bs4ac2_lr2e-5"
+    --run_name "LoRA_Med_bs4ac2_lr2e-5-ep3"
