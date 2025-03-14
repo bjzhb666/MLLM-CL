@@ -39,6 +39,7 @@ from ETrain.Train.LLaVA.llava_trainer import load_model_from_previous_task
 
 from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+Image.MAX_IMAGE_PIXELS = None
 
 local_rank = None
 
