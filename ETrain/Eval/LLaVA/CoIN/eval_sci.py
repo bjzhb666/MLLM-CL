@@ -33,10 +33,23 @@ def eval_single(annotation_file, result_file):
         gt: str =  ground_truth.lower()
         if image.split('/')[-1].split('_')[0]=="AI2D" or image.split('/')[-1].split('_')[0]=="TQA" or image.split('/')[-1].split('_')[0]=="VQA":
             if gt == pred:
-                right += 1
-        else:
-            if gt in pred:
-                right += 1
+                item_score = 1
+                right += item_score
+        else: # MapQA
+            if 'Which states' in problem:
+                gt_list = gt.split(',')
+                len_gt = len(gt_list)
+                pred_list = pred.split(',')
+                # 检查pred_list中有几个gt_list中的元素
+                count = 0
+                for gt in gt_list:
+                    if gt in pred_list:
+                        count += 1
+                item_score = count / len_gt
+                right += item_score
+            elif gt in pred:
+                item_score = 1
+                right += item_score
         
         # save the result as jsonl
         pred_list.append(dict(
@@ -44,7 +57,7 @@ def eval_single(annotation_file, result_file):
             pred=result['text'].lower(),
             ground_truth=ground_truth.lower(),
             image=image,
-            score=1 if pred == gt else 0,
+            score=item_score,
         ))
     print('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
     #将结果写入文件
