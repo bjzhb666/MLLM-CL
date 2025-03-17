@@ -50,7 +50,9 @@ def eval_single(annotation_file, result_file):
             elif gt in pred:
                 item_score = 1
                 right += item_score
-        
+            else:
+                item_score = 0
+
         # save the result as jsonl
         pred_list.append(dict(
             question=problem,
