@@ -27,7 +27,7 @@ def eval_single(annotation_file, result_file):
         if 'Unanswerable' in result['text'] :
             continue
         
-        pred: str = result['text'].lower()
+        pred: str = result['text'].lower().replace(' ', '').replace('.', '')
         gt: str =  ground_truth.lower()
         if gt == pred: # all are multiple choice questions or TF questions
             right += 1
