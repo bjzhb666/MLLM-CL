@@ -4,31 +4,25 @@ MODEL_VERSION="vicuna-7b-v1.5"
 ################## VICUNA ##################
 
 if [ ! $1 ]; then
-    BASE_NAME="CoIN"
+    BASE_NAME="Ability"
 else
     BASE_NAME=$1
 fi
+
 if [ ! $2 ]; then
-#     USE_PREVIOUS_TASK_MODEL=False
+    USE_PREVIOUS_TASK_MODEL=False
     PREVIOUS_TASK=""
 else
-    PREVIOUS_TASK="--previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/Sci_llava_lora"
-#     USE_PREVIOUS_TASK_MODEL=True
-#     PREVIOUS_TASK="--previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/AI2D_llava_lora"
+    USE_PREVIOUS_TASK_MODEL=True
+    PREVIOUS_TASK="--previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/SAT_llava_lora"
 fi
 if [ ! $3 ]; then
     EXPERT=""
 else
     EXPERT="--expert_num $3"
 fi
+DATA_PATH=/data/hongbo_zhao/Ability_data
 
-DATA_PATH=/data/hongbo_zhao/data/Domain_data
-################## LLaMA-2 ##################
-# PROMPT_VERSION="llava_llama_2"
-# MODEL_VERSION="Llama-2-7b-chat-hf"
-################## LLaMA-2 ##################
-
-    # --previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/VQAv2_llava_lora \
 deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/LLaVA/train_mem.py \
     --deepspeed ./scripts/zero2.json \
     --lora_enable True --lora_r 128 --lora_alpha 256 --mm_projector_lr 2e-5 \
@@ -36,8 +30,8 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     $PREVIOUS_TASK \
     --model_name_or_path ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
     --version $PROMPT_VERSION \
-    --data_path $DATA_PATH/fin/train.json \
-    --image_folder $DATA_PATH/fin \
+    --data_path $DATA_PATH/Coder/train.json \
+    --image_folder $DATA_PATH/Coder \
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
@@ -46,7 +40,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --image_aspect_ratio pad \
     --group_by_modality_length True \
     --bf16 True \
-    --output_dir ./checkpoints/LLaVA/$BASE_NAME/FinVis_llava_lora \
+    --output_dir ./checkpoints/LLaVA/$BASE_NAME/CODE_llava_lora \
     --num_train_epochs 1 \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \
@@ -64,4 +58,4 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
     --report_to wandb \
-    --run_name "LoRA_Fin_bs4ac2_lr2e-5"
+    --run_name "LoRA_CODE_bs4ac2_lr2e-5"

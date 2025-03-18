@@ -36,9 +36,10 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     $PREVIOUS_TASK \
     --model_name_or_path ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
     --version $PROMPT_VERSION \
-    --data_path $DATA_PATH/FinVis/train.json \
-    --image_folder $DATA_PATH/FinVis/PretrainData/images \
+    --data_path $DATA_PATH/fin/train.json \
+    --image_folder $DATA_PATH/fin \
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
+    --pretrain_mm_mlp_adapter ./checkpoints/LLaVA/Vicuna/vicuna-7b-v.15-projector/mm_projector.bin \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
     --mm_use_im_start_end False \
@@ -46,13 +47,13 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --image_aspect_ratio pad \
     --group_by_modality_length True \
     --bf16 True \
-    --output_dir ./checkpoints/LLaVA/$BASE_NAME/FinVis_llava_lora \
+    --output_dir ./checkpoints/LLaVA/$BASE_NAME/Fin_llava_lora \
     --num_train_epochs 1 \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \
     --gradient_accumulation_steps 2 \
     --evaluation_strategy "no" \
-    --save_strategy "epoch" \
+    --save_strategy "no" \
     --learning_rate 2e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
