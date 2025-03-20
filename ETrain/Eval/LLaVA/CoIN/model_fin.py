@@ -43,7 +43,7 @@ class CustomDataset(Dataset):
         if answer in ['Yes', 'No']:
             qs = line["text"] + ' Only answer with yes or no directly.'
         else: # choices
-            qs = line["text"] + ' Answer the question with a single letter choice.'
+            qs = line["text"] + " Answer with the given letter directly, e.g., A, B, C, D."
         if self.model_config.mm_use_im_start_end:
             qs = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN + '\n' + qs
         else:
