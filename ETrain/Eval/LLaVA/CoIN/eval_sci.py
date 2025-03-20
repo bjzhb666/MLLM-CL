@@ -35,6 +35,8 @@ def eval_single(annotation_file, result_file):
             if gt == pred:
                 item_score = 1
                 right += item_score
+            else:
+                item_score = 0
         else: # MapQA
             if 'Which states' in problem:
                 gt_list = gt.split(',')
