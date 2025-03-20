@@ -208,6 +208,10 @@ def preprocess_v1(
         conv.messages = []
         for j, sentence in enumerate(source):
             role = roles[sentence["from"]]
+            if role != conv.roles[j % 2]:
+                print(sources)
+                print('j:', j)
+                print('i:', i)
             assert role == conv.roles[j % 2], f"{i}"
             conv.append_message(role, sentence["value"])
         conversations.append(conv.get_prompt())
@@ -490,7 +494,12 @@ class LazySupervisedDataset(Dataset):
                     image = [processor.preprocess(img, return_tensors='pt')['pixel_values'][0] for img in image]
                 else:
                     image = expand2square(image, tuple(int(x*255) for x in processor.image_mean))
-                    image = processor.preprocess(image, return_tensors='pt')['pixel_values'][0]
+                    try:
+                        image = processor.preprocess(image, return_tensors='pt')['pixel_values'][0]
+                    except Exception as e:
+                        print('Wrong image', image_folder, image_file)
+                        print(e)
+                        raise e
             else:
                 if isinstance(image, list):
                     image = [processor.preprocess(img, return_tensors='pt')['pixel_values'][0] for img in image]

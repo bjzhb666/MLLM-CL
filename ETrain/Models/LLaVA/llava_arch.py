@@ -194,7 +194,15 @@ class LlavaMetaForCausalLM(ABC):
                 cur_new_input_embeds.append(cur_input_embeds_no_im[i])
                 cur_new_labels.append(cur_labels_noim[i])
                 if i < num_images:
-                    cur_image_features = image_features[cur_image_idx]
+                    try:
+                        cur_image_features = image_features[cur_image_idx]
+                    except IndexError as e:
+                        print(cur_image_idx) # 4
+                        print(len(image_features)) # 4
+                        print(images)
+                        print(num_images) # 2
+                        print(input_ids)
+                        raise e
                     cur_image_idx += 1
                     cur_new_input_embeds.append(cur_image_features)
                     cur_new_labels.append(torch.full((cur_image_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
