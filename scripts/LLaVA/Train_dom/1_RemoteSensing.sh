@@ -8,6 +8,7 @@ if [ ! $1 ]; then
 else
     BASE_NAME=$1
 fi
+OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/RemoteSensing_llava_lora"
 
 if [ ! $2 ]; then
     USE_PREVIOUS_TASK_MODEL=False
@@ -20,6 +21,7 @@ if [ ! $3 ]; then
     EXPERT=""
 else
     EXPERT="--expert_num $3"
+    OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/RemoteSensing_llava_lora_MOE"
 fi
 ################## LLaMA-2 ##################
 # PROMPT_VERSION="llava_llama_2"
@@ -45,7 +47,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --image_aspect_ratio pad \
     --group_by_modality_length True \
     --bf16 True \
-    --output_dir ./checkpoints/LLaVA/$BASE_NAME/RemoteSensing_llava_lora \
+    --output_dir $OUTPUT_DIR \
     --num_train_epochs 1 \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \

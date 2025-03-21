@@ -8,6 +8,7 @@ if [ ! $1 ]; then
 else
     BASE_NAME=$1
 fi
+OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/FinVis_llava_lora"
 if [ ! $2 ]; then
 #     USE_PREVIOUS_TASK_MODEL=False
     PREVIOUS_TASK=""
@@ -20,13 +21,14 @@ if [ ! $3 ]; then
     EXPERT=""
 else
     EXPERT="--expert_num $3"
+    PREVIOUS_TASK="--previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/Sci_llava_lora_MOE"
+    OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/FinVis_llava_lora_MOE"
 fi
 
 DATA_PATH=/data/hongbo_zhao/data/Domain_data
-################## LLaMA-2 ##################
-# PROMPT_VERSION="llava_llama_2"
-# MODEL_VERSION="Llama-2-7b-chat-hf"
-################## LLaMA-2 ##################
+echo ""
+echo "PREVIOUS_TASK: $PREVIOUS_TASK"
+echo ""
 
     # --previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/VQAv2_llava_lora \
 deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/LLaVA/train_mem.py \
@@ -46,7 +48,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --image_aspect_ratio pad \
     --group_by_modality_length True \
     --bf16 True \
-    --output_dir ./checkpoints/LLaVA/$BASE_NAME/FinVis_llava_lora \
+    --output_dir $OUTPUT_DIR \
     --num_train_epochs 1 \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \

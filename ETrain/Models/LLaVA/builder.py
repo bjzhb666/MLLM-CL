@@ -82,7 +82,7 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
                 print('Loading MOE LoRA weights...')
             else:
                 from peft import PeftModel
-            print('Loading LoRA weights...')
+                print('Loading LoRA weights...')
             # model.load_adapter()
             # load_lora_model()
             model = PeftModel.from_pretrained(model, model_path)

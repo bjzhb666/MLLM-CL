@@ -58,4 +58,4 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
     --report_to wandb \
-    --run_name "LoRA_SAT_bs4ac2_lr2e-5"
+    --run_name "LoRA_math_bs4ac2_lr2e-5"

@@ -33,7 +33,7 @@ DATA_PATH=/data/hongbo_zhao/data/Domain_data
 RESULT_DIR="./results/CoIN/$MODELBASE/$MODELNAME"
 
 for IDX in $(seq 0 $((CHUNKS-1))); do
-    CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_ai2d \
+    CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_fin \
         --model-path $MODELPATH \
         --model-base ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
         --question-file $DATA_PATH/fin/test.json \

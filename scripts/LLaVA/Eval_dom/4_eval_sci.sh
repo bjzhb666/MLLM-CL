@@ -12,7 +12,7 @@ else
 fi
 
 if [ ! -n "$2" ] ;then
-    MODELPATH='./checkpoints/LLaVA/CoIN/Sci_llava_lora2e-5'
+    MODELPATH='./checkpoints/LLaVA/CoIN/Sci_llava_lora'
 else
     MODELPATH=$2
 fi
