@@ -21,11 +21,11 @@ if __name__ == "__main__":
     #     'Grounding': 'B',
     # }
     GT_map={
-        'Fin':'A',
-        'Sci':'B',
-        'Med':'C',
-        'AD':'D',
-        'RS':'E'
+        'fin':'A',
+        'sci':'B',
+        'pathvqa':'C',
+        'drivelm':'D',
+        'rs':'E'
     }
     with open(answers_file, "r") as f:
         for line in f:

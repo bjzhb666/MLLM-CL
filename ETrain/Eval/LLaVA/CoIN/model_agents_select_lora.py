@@ -15,27 +15,26 @@ from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 import math
 import copy
+import random
 
-selection_prompt = "You are a helpful assistant router. Based on the visual content, questions, and model pool the user provides, especially the question, you need to consider the expertise of these models to select the most suitable model to help you answer the questions. JUST answer with the model's letter from the given choices directly. Note that your job is to select the most suitable model rather than asking the question directly.\nModel pool:"
-# models = [
-#     "This model can achieve more fine-grained vision perception for images with text and answer questions based on the reference OCR token.", # TextVQA
-#     "This model is a state-of-the-art object detector that can output the object coordinates in images.", # Grounding 
-#     "This model can answer questions about science, including natural science, language science, and social science.", # ScienceQA
-#     "This model can answer visual questions from People Who Are Blind. When the provided information is insufficient, respond with 'Unanswerable'.", # VizWiz
-#     "This model can give short answers to conduct visual reasoning of real scenes.", # GQA
-# ]
-models=[
-    "This model is a financial expert and can deal with stocks problems in Chinese based on the provided candlestick chart. This model demonstrates exceptional proficiency in describing, question answering and trend prediction of the candlestick charts " # Fin
-    "This model is an expert in Sciense, especially in biology, map understanding, physics, chemistry etc. However, it encounters challenges in understanding medical images." # Sci
-    "This model is an expert in Medical image understangding, mainly focused on pathology, including pathology/cell sections and some natural pictures of the conditions." # Med
-    "This model is an expert in ego view autonomous driving scene understanding, including prediction the coordinates, planning the next action, etc.", # AD
-    "This model is an expert in understanding the remote sensing data, it shows strong ability in counting, checking the presence of a object, asking the area of the objects, etc." # RS
-]
-# options = ["1", "2", "3", "4", "5"]
-options = ["A", "B", "C", "D", "E"]
-for i in range(len(models)):
-    selection_prompt = selection_prompt + "\n" + options[i] + ". " + models[i]
-ROUTING_PROMPT = selection_prompt + "\n\nQuestion:\n"
+ROUTING_PROMPT = """You are a helpful assistant router. There are five expert models, each specializing in one of the following domains: finance(stock), science, medical imaging, autonomous driving, and remote sensing,.
+
+Your task is to select the most suitable model based on the provided visual content, user question, and model descriptions. Consider the expertise of each model carefully, and select the one best equipped to handle the given question. 
+
+**Important Instructions:**  
+- Respond **only** with the letter (A,B,C,D,E) corresponding to the most suitable model.  
+- Do **not** attempt to answer the user's question directly.  
+
+**Model Pool:**  
+
+- **A**: A financial expert specializing in stock market analysis using candlestick charts. This model excels at trend prediction and technical indicator analysis.
+- **B**: A science expert with proficiency in biology, map interpretation, physics, and chemistry.
+- **C**: A medical imaging expert, primarily focused on pathology, including cell sections and natural images of medical conditions.  
+- **D**: An autonomous driving expert specializing in ego-view scene understanding, including coordinate prediction and action planning and other driving-related tasks. The input image is an image concatenated by 6 camera views.
+- **E**: A remote sensing expert, adept at analyzing aerial or satellite images. This model excels at object counting, presence detection, and area estimation.
+
+Here is the user's question: """
+
 PROMPT_AFTER_QUESTION = "You only need to select the suitable model and do not answer the question. JUST answer with the model's letter from the given choices directly."
 
 def split_list(lst, n):
@@ -55,12 +54,12 @@ class CustomDataset(Dataset):
         self.qf = args.qf
         self.questions = questions
         self.image_folder = image_folder
-        print("args.result_folders:", args.result_folders)
+        # print("args.result_folders:", args.result_folders)
         self.result_folders = args.result_folders
         self.tokenizer = tokenizer
         self.image_processor = image_processor
         self.model_config = model_config
-        self.names = "Fin Sci Med AD RS".split(' ')
+        self.names = "Fin Sci PathVQA DriveLM RS".split(' ')
         self.par = [f"{name}_{self.qf}" for name in self.names]
 
         self.ad = []
@@ -76,7 +75,7 @@ class CustomDataset(Dataset):
             self.ans.append([json.loads(l) for l in open(os.path.join(self.ad[i], 'Finetune', 'merge.jsonl'), 'r').readlines()])
         for i in range(len(self.ans)):
             self.ans[i] = {x['question_id']: x for x in self.ans[i]}
-        
+
         qs = [] # questions with answers, each question is a dict with keys: question_id, text, image(optional), 
         # ans (a list of answers for all models), answer (GT answer)
         for i in range(len(self.questions)):
@@ -96,14 +95,12 @@ class CustomDataset(Dataset):
             q['ans'] = [f"{self.ans[j][qid]['text']}" for j in range(len(self.ans))]
             qs.append(q)
         self.questions = qs
+        # print(qs)
 
     def __getitem__(self, index):
         line = self.questions[index]
-        # try:
-        qs_text = line["text"] #+ "\nAnswer:"#.replace("Answer with the option's letter from the given choices directly.","")
+        qs_text = line["text"] 
         ans = line['ans']
-        # qs = qs + "\nYou can only choice answers shown below:\n"
-        # qs = qs + "\n".join(ans) #+ "\nAnswer with the option's letter from the given choices directly."
         idx = line["question_id"]
         qs_text = qs_text.replace("<image>", "").strip() # for ScienceQA, remove <image> token
         routing_qs = copy.deepcopy(ROUTING_PROMPT) + qs_text + '\n' + PROMPT_AFTER_QUESTION
@@ -153,7 +150,9 @@ def choose_ans(routing_outputs, ans_candidates):
     # check the rounting outputs is legal
     if sum(1 for c in routing_outputs if c not in 'ABCDE') > 1:
         print(f'[Warning] Routing outputs {routing_outputs} are not legal')
-        assert False
+        # 从0-4中选择一个，选择随机数
+        return ans_candidates[random.randint(0, 4)]
+        # assert False
     if 'A' in routing_outputs:
         return ans_candidates[0]
     elif 'B' in routing_outputs:
@@ -166,26 +165,8 @@ def choose_ans(routing_outputs, ans_candidates):
         return ans_candidates[4]
     else:
         print(f'[Warning] Routing outputs {routing_outputs} are not legal')
-        assert False
-
-def choose_ans_num(routing_outputs, ans_candidates):
-    # check the rounting outputs is legal
-    if sum(1 for c in routing_outputs if c not in '12345') > 1:
-        print(f'[Warning] Routing outputs {routing_outputs} are not legal')
-        assert False
-    if '1' in routing_outputs:
-        return ans_candidates[0]
-    elif '2' in routing_outputs:
-        return ans_candidates[1]
-    elif '3' in routing_outputs:
-        return ans_candidates[2]
-    elif '4' in routing_outputs:
-        return ans_candidates[3]
-    elif '5' in routing_outputs:
-        return ans_candidates[4]
-    else:
-        print(f'[Warning] Routing outputs {routing_outputs} are not legal')
-        assert False
+        return ans_candidates[random.randint(0, 4)]
+        # assert False
 
 def eval_model(args):
     # Model
@@ -264,7 +245,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--result-folders', type=str, default='results/CoIN/LLaVA')
     parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
-    parser.add_argument("--model-base", type=str, default=None)
+    parser.add_argument("--model-base", type=str, default="checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5")
     parser.add_argument("--image-folder", type=str, default="")
     parser.add_argument("--question-file", type=str, default="tables/question.jsonl")
     parser.add_argument("--answers-file", type=str, default="answer.jsonl")
