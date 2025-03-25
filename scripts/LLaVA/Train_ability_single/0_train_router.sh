@@ -1,32 +1,14 @@
-################## VICUNA ##################
-PROMPT_VERSION=v1
-MODEL_VERSION="vicuna-7b-v1.5"
-################## VICUNA ##################
+# train rounter with lora using merge lora as initial model
 
-if [ ! $1 ]; then
-    BASE_NAME="Ability"
-else
-    BASE_NAME=$1
-fi
-
-if [ ! $2 ]; then
-    USE_PREVIOUS_TASK_MODEL=False
-    PREVIOUS_TASK=""
-else
-    USE_PREVIOUS_TASK_MODEL=True
-    PREVIOUS_TASK="--previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/PathVQA_llava_lora"
-fi
-
-DATA_PATH=/data/hongbo_zhao/Ability_data
+Train_Epoch=24
+SAVE_DIR=./checkpoints/Router_Ability/Router_llava_lora_5e-6-ep$Train_Epoch
 
 deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/LLaVA/train_mem.py \
     --deepspeed ./scripts/zero2.json \
-    --lora_enable True --lora_r 128 --lora_alpha 256 --mm_projector_lr 2e-5 \
-    $PREVIOUS_TASK \
+    --lora_enable True --lora_r 128 --lora_alpha 256 --mm_projector_lr 5e-6 \
     --model_name_or_path ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
-    --version $PROMPT_VERSION \
-    --data_path $DATA_PATH/SAT/train.json \
-    --image_folder $DATA_PATH/SAT \
+    --data_path /data/hongbo_zhao/code/LLaVA/Ability_data/Router_train30.json \
+    --image_folder /data/hongbo_zhao/code/LLaVA/Ability_data/sample_images30 \
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
     --pretrain_mm_mlp_adapter ./checkpoints/LLaVA/Vicuna/vicuna-7b-v.15-projector/mm_projector.bin \
     --mm_projector_type mlp2x_gelu \
@@ -36,14 +18,14 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --image_aspect_ratio pad \
     --group_by_modality_length True \
     --bf16 True \
-    --output_dir ./checkpoints/LLaVA/$BASE_NAME/SAT_llava_lora \
-    --num_train_epochs 1 \
+    --output_dir $SAVE_DIR \
+    --num_train_epochs $Train_Epoch \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \
-    --gradient_accumulation_steps 2 \
+    --gradient_accumulation_steps 1 \
     --evaluation_strategy "no" \
     --save_strategy "no" \
-    --learning_rate 2e-5 \
+    --learning_rate 5e-6 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \
@@ -54,5 +36,6 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
     --report_to wandb \
-    --run_name "LoRA_SAT_bs4ac2_lr2e-5" \
-    --is_SAT True
+    --run_name "LoRA_Router_abi_bs4ac1_lr5e-6-ep$Train_Epoch"
+
+# find $SAVE_DIR/ -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +

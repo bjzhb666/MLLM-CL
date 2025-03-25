@@ -106,7 +106,7 @@ def eval_model(args):
                 do_sample=True if args.temperature > 0 else False,
                 temperature=args.temperature,
                 top_p=args.top_p,
-                num_beams=args.num_beams,
+                num_beams=1,
                 max_new_tokens=args.max_new_tokens,
                 stopping_criteria=[stopping_criteria],
                 use_cache=True)
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     parser.add_argument("--temperature", type=float, default=0)
     parser.add_argument("--top_p", type=float, default=None)
     parser.add_argument("--num_beams", type=int, default=1)
-    parser.add_argument("--max_new_tokens", type=int, default=128)
+    parser.add_argument("--max_new_tokens", type=int, default=2048)
     args = parser.parse_args()
 
     eval_model(args)

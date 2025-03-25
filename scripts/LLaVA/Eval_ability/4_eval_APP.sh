@@ -1,8 +1,6 @@
 #!/bin/bash
-# pip install evaluate
-# pip install bert_score
 
-gpu_list="${CUDA_VISIBLE_DEVICES:-0,1,2,3,4,5,6,7}"
+gpu_list="${CUDA_VISIBLE_DEVICES:-0,1,2,3,4,5,6,7}" # 
 IFS=',' read -ra GPULIST <<< "$gpu_list"
 
 CHUNKS=${#GPULIST[@]}
@@ -14,12 +12,12 @@ else
 fi
 
 if [ ! -n "$2" ] ;then
-    MODELPATH='./checkpoints/LLaVA/CoIN/FinVis_llava_lora'
+    MODELPATH='./checkpoints/LLaVA/Ability/APP_llava_lora'
 else
     MODELPATH=$2
 fi
 if [ ! -n "$3" ] ;then
-    MODELNAME='FinVis_finvis'
+    MODELNAME='APP_app'
 else
     MODELNAME=$3
 fi
@@ -29,15 +27,17 @@ if [ ! -n "$4" ] ;then
 else
     MODELBASE=$4
 fi
-DATA_PATH=/data/hongbo_zhao/data/Domain_data
-RESULT_DIR="./results/CoIN/$MODELBASE/$MODELNAME"
+
+RESULT_DIR="./results/Ability/$MODELBASE/$MODELNAME"
+# RESULT_DIR="./results/CoIN/LLaVA/OCRVQA"
+DATA_PATH=/data/hongbo_zhao/Ability_data
 
 for IDX in $(seq 0 $((CHUNKS-1))); do
-    CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_fin \
+    CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_ai2d \
         --model-path $MODELPATH \
         --model-base ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
-        --question-file $DATA_PATH/fin/test.json \
-        --image-folder $DATA_PATH/fin \
+        --question-file $DATA_PATH/APP_test/test.json \
+        --image-folder $DATA_PATH/APP_test \
         --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
         --num-chunks $CHUNKS \
         --chunk-idx $IDX \
@@ -56,8 +56,3 @@ output_file=$RESULT_DIR/$STAGE/merge.jsonl
 for IDX in $(seq 0 $((CHUNKS-1))); do
     cat $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl >> "$output_file"
 done
-
-python -m ETrain.Eval.LLaVA.CoIN.eval_finvis \
-    --annotation-file $DATA_PATH/Fin/test.json \
-    --result-file $output_file \
-    --output-dir $RESULT_DIR/$STAGE

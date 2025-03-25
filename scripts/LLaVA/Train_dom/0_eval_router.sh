@@ -6,7 +6,7 @@ IFS=',' read -ra GPULIST <<< "$gpu_list"
 CHUNKS=${#GPULIST[@]}
 
 if [ ! -n "$1" ] ;then
-    DATASET="RemoteSensing" # Medical/data AD/DriveLM Sci fin
+    DATASET="RemoteSensing" # Medical/data AD/DriveLM Sci Fin
 else
     DATASET=$1
 fi
@@ -45,7 +45,7 @@ for IDX in $(seq 0 $((CHUNKS-1))); do
     CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_agents_select_lora \
         --model-path $MODELPATH \
         --question-file $DATA_PATH/$DATASET/test.json \
-        --image-folder $DATA_PATH/$DATASET  \
+        --image-folder $IMAGE_FOLDER  \
         --result-folders $ALL_RESULT_DIR \
         --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
         --num-chunks $CHUNKS \
@@ -72,6 +72,8 @@ wait
 python -m ETrain.Eval.LLaVA.CoIN.model_agents_select_acc \
     --qf $QF --answers-file $output_file
 echo ""
+echo $IMAGE_FOLDER
+echo $output_file
 
 if [ $QF == "rs" ]; then
     python -m ETrain.Eval.LLaVA.CoIN.eval_ai2d \
@@ -93,7 +95,7 @@ elif [ $QF == "pathvqa" ]; then
 
 elif [ $QF == "fin" ]; then
    python -m ETrain.Eval.LLaVA.CoIN.eval_finvis \
-        --annotation-file $DATA_PATH/fin/test.json \
+        --annotation-file $DATA_PATH/Fin/test.json \
         --result-file $output_file \
         --output-dir $RESULT_DIR/$STAGE 
 

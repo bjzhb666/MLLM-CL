@@ -33,7 +33,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --model_name_or_path ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
     --version $PROMPT_VERSION \
     --data_path $DATA_PATH/OCR/train.json \
-    --image_folder $DATA_PATH/OCR/Monkey_150k \
+    --image_folder $DATA_PATH/OCR \
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
     --pretrain_mm_mlp_adapter ./checkpoints/LLaVA/Vicuna/vicuna-7b-v.15-projector/mm_projector.bin \
     --mm_projector_type mlp2x_gelu \
