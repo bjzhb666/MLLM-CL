@@ -31,22 +31,38 @@ else
 fi
 DATA_PATH=/data/hongbo_zhao/data/Domain_data
 RESULT_DIR="./results/CoIN/$MODELBASE/$MODELNAME"
+if [ "$3" = "llava_fin" ]; then
+    echo "LLava 1.5 test"
+    for IDX in $(seq 0 $((CHUNKS-1))); do
+        CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_fin \
+            --model-path $MODELPATH \
+            --question-file $DATA_PATH/Fin/test.json \
+            --image-folder $DATA_PATH/Fin \
+            --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
+            --num-chunks $CHUNKS \
+            --chunk-idx $IDX \
+            --temperature 0 \
+            --conv-mode vicuna_v1 &
+    done
 
-for IDX in $(seq 0 $((CHUNKS-1))); do
-    CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_fin \
-        --model-path $MODELPATH \
-        --model-base ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
-        --question-file $DATA_PATH/Fin/test.json \
-        --image-folder $DATA_PATH/Fin \
-        --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
-        --num-chunks $CHUNKS \
-        --chunk-idx $IDX \
-        --temperature 0 \
-        --conv-mode vicuna_v1 &
-done
+    wait
+else
+    for IDX in $(seq 0 $((CHUNKS-1))); do
+        CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_fin \
+            --model-path $MODELPATH \
+            --model-base ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
+            --question-file $DATA_PATH/Fin/test.json \
+            --image-folder $DATA_PATH/Fin \
+            --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
+            --num-chunks $CHUNKS \
+            --chunk-idx $IDX \
+            --temperature 0 \
+            --conv-mode vicuna_v1 &
+    done
 
-wait
+    wait
 
+fi
 output_file=$RESULT_DIR/$STAGE/merge.jsonl
 
 # Clear out the output file if it exists.
