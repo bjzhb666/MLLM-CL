@@ -50,8 +50,8 @@ else
         CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_ai2d \
             --model-path $MODELPATH \
             --model-base ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
-            --question-file $DATA_PATH/RemoteSensing/test.json \
-            --image-folder $DATA_PATH/RemoteSensing \
+            --question-file $DATA_PATH/Medical/data/test.json \
+            --image-folder $DATA_PATH/Medical/data \
             --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
             --num-chunks $CHUNKS \
             --chunk-idx $IDX \
