@@ -35,15 +35,28 @@ def eval_single(annotation_file, result_file):
         #     right += 1
         # if pred == gt:
         #     right += 1
-        if gt in pred:
-            right += 1
+        score = 0
+        if ' ' in gt: # 答案不止有一个单词
+            if gt in pred:
+                right += 1
+                score = 1
+        else: # 答案只有一个单词
+            gt = gt.replace('.', '')
+            if ' ' in pred:
+                if (' '+gt) in pred or (gt+' ') in pred or (gt+'.') in pred or (gt+',') in pred:
+                    right += 1
+                    score = 1
+            else: # pred 只有一个单词
+                if gt in pred:
+                    right += 1
+                    score = 1
         # save the result as jsonl
         pred_list.append(dict(
             question=problem,
             pred=result['text'].lower(),
             ground_truth=ground_truth.lower(),
             image=image,
-            score=1 if pred == gt else 0,
+            score=score,
         ))
     print('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
     #将结果写入文件
