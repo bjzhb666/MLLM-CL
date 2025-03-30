@@ -90,7 +90,7 @@ def eval_model(args):
     data_loader = create_data_loader(questions, args.image_folder, tokenizer, image_processor, model.config)
     # 读取results/llava_v1.5_7b_MathVista_MINI.xlsx
     import pandas
-    excel_ori = pandas.read_excel('results/llava_v1.5_7b_MathVista_MINI.xlsx') #  是一个DataFrame
+    excel_ori = pandas.read_excel('llava_v1.5_7b_MathVista_MINI.xlsx') #  是一个DataFrame
     excel = copy.deepcopy(excel_ori)
     for (input_ids, image_tensor), line in tqdm(zip(data_loader, questions), total=len(questions)):
         idx = line["question_id"]
@@ -122,7 +122,7 @@ def eval_model(args):
         outputs = tokenizer.batch_decode(output_ids[:, input_token_len:], skip_special_tokens=True)[0]
         outputs = outputs.strip()
         # 在dataframe中找到index为id_excel的行
-        this_line = excel.iloc[id_excel]
+        # this_line = excel.iloc[id_excel]
         # 修改this_line中'prediction’列的值为outputs
         excel.at[id_excel, 'prediction'] = outputs
         ans_id = shortuuid.uuid()
@@ -136,7 +136,7 @@ def eval_model(args):
         
     ans_file.close()
     # 保存excel为xlsx
-    excel.to_excel('results/llava_v1.5_7b_MathVista_MINI-new.xlsx', index=False)
+    excel.to_excel(args.output_xlsx, index=False)
     print('Excel saved!')
 
 if __name__ == "__main__":

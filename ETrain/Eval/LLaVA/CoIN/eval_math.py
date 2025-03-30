@@ -347,7 +347,7 @@ def get_args():
     return parser.parse_args()
 
 def build_judge(**kwargs):
-    from api import OpenAIWrapper
+    from .api import OpenAIWrapper
     model = kwargs.pop('model', None)
     kwargs.pop('nproc', None)
     load_env()
