@@ -41,6 +41,19 @@ def auto_upgrade(config):
             print("Checkpoint upgrade aborted.")
             exit(1)
 
+def find_all_vision_linear_names(model): 
+    cls = torch.nn.Linear
+    lora_module_names = set()
+    multimodal_keywords = 'vision_tower.vision_tower.vision_model.encoder.layers'
+    for name, module in model.named_modules():
+        if multimodal_keywords in name and isinstance(module, cls):
+            lora_module_names.add(name)  
+    if 'lm_head' in lora_module_names: # needed for 16-bit
+        lora_module_names.remove('lm_head')
+    # import pdb; pdb.set_trace()
+    return list(lora_module_names)
+
+
 
 def find_all_linear_names(model):
     cls = torch.nn.Linear
@@ -156,8 +169,7 @@ def create_LLaVA_model(training_args, model_args, data_args, bnb_model_from_pret
                 model.to(torch.bfloat16)
             if training_args.fp16:
                 model.to(torch.float16)
-        rank0_print(local_rank,"Adding LoRA adapters...")
-        model = get_peft_model(model, lora_config)
+
 
     if 'mpt' in model_args.model_name_or_path:
         tokenizer = transformers.AutoTokenizer.from_pretrained(
@@ -191,7 +203,7 @@ def create_LLaVA_model(training_args, model_args, data_args, bnb_model_from_pret
         else:
             conversation_lib.default_conversation = conversation_lib.conv_templates["vicuna_v1"]
 
-    if model_args.vision_tower is not None:
+    if model_args.vision_tower is not None: # add vision tower here
         model.get_model().initialize_vision_modules(
             model_args=model_args,
             fsdp=training_args.fsdp
@@ -199,7 +211,15 @@ def create_LLaVA_model(training_args, model_args, data_args, bnb_model_from_pret
         
         vision_tower = model.get_vision_tower()
         vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
+        
+        rank0_print(local_rank,"Adding LoRA adapters...")
+        # add vision peft model
+        if model_args.use_vision_lora:
+            rank0_print(local_rank,"Adding vision LoRA adapters...")
+            lora_config.target_modules += find_all_vision_linear_names(model)
 
+        model = get_peft_model(model, lora_config)
+        
         data_args.image_processor = vision_tower.image_processor
         data_args.is_multimodal = True
 
@@ -240,4 +260,15 @@ def create_LLaVA_model(training_args, model_args, data_args, bnb_model_from_pret
                     if training_args.bf16 and module.weight.dtype == torch.float32:
                         module = module.to(torch.bfloat16)
     
+
+    # open projector weights because of the close by lora
+    for p in model.get_model().mm_projector.parameters():
+        p.requires_grad = True
+    
+    # 输出model中可学习的参数
+    rank0_print(local_rank, "Learnable Parameters:")
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            rank0_print(local_rank, name)
+
     return model, tokenizer

@@ -64,6 +64,8 @@ class ModelArguments:
 
     task_embedding_dim: Optional[int] = field(default=64)
     expert_num: Optional[int] = field(default=None)
+    
+    use_vision_lora: bool = field(default=False)
 
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):
