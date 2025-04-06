@@ -95,7 +95,7 @@ def eval_model(args):
     for (input_ids, image_tensor), line in tqdm(zip(data_loader, questions), total=len(questions)):
         idx = line["question_id"]
         cur_prompt = line["text"]
-        id_excel = int(idx[-1])+1
+        id_excel = int(idx.replace("testmini_",""))
         
         input_ids = input_ids.to(device='cuda', non_blocking=True)
         conv = conv_templates[args.conv_mode].copy()
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     parser.add_argument("--temperature", type=float, default=0)
     parser.add_argument("--top_p", type=float, default=None)
     parser.add_argument("--num_beams", type=int, default=1)
-    parser.add_argument("--max_new_tokens", type=int, default=128)
+    parser.add_argument("--max_new_tokens", type=int, default=2048)
     parser.add_argument("--output_xlsx", type=str, default="output.xlsx")
     args = parser.parse_args()
 
