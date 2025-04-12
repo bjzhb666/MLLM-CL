@@ -26,31 +26,69 @@ def eval_single(annotation_file, result_file):
         ground_truth = annotation['answer']
         problem = result['prompt']
         image = annotation['image']
-        if 'Unanswerable' in result['text'] :
-            continue
-        
+        # type = annotation['type']
+        dimension = annotation['type'] # 2D or 3D
+        task = annotation['task']
+        # 统计2D和3D的准确率
         pred: str = result['text'].lower().strip().replace(' ', '').replace('\n', '').replace('.', '')
         gt: str =  ground_truth.lower().strip().replace(' ', '').replace('\n', '').replace('.', '')
         # if pred.startswith(gt) or gt.startswith(pred):
         #     right += 1
         # if pred == gt:
         #     right += 1
-        if gt in pred:
+        score = 0
+        if gt == pred:
             right += 1
+            score = 1
         # save the result as jsonl
         pred_list.append(dict(
             question=problem,
             pred=result['text'].lower(),
             ground_truth=ground_truth.lower(),
             image=image,
-            score=1 if pred == gt else 0,
+            score=score,
+            dimension=dimension,
+            task=task,
         ))
     print('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
+    # 统计pred_list中，2D和3D的准确率
+    right_2d = 0
+    total_2d = 0
+    right_3d = 0
+    total_3d = 0
+    count_right = 0
+    conut_total = 0
+    for item in pred_list:
+        if item['task'] == 'Count':
+            if item['score']==1:
+                count_right += 1
+                conut_total += 1
+            else:
+                conut_total += 1
+    for item in pred_list:
+        if item['dimension'] == '2D':
+            if item['score']==1:
+                right_2d += 1
+                total_2d += 1
+            else:
+                total_2d += 1
+        if item['dimension'] == '3D':
+            if item['score']==1:
+                right_3d += 1
+                total_3d += 1
+            else:
+                total_3d += 1
+    # print('2D Accuracy: {:.2f}%\n'.format(100. * right_2d / total_2d))
+    # print('3D Accuracy: {:.2f}%\n'.format(100. * right_3d / total_3d))
+    print('Count Accuracy: {:.2f}%\n'.format(100. * count_right / conut_total))
     #将结果写入文件
     if args.output_dir is not None:
         output_file = os.path.join(args.output_dir, 'Result.text')
         with open(output_file, 'w') as f:
             f.write('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
+            # f.write('3D Accuracy: {:.2f}%\n'.format(100. * right_3d / total_3d))
+            # f.write('2D Accuracy: {:.2f}%\n'.format(100. * right_2d / total_2d))
+            f.write('Count Accuracy: {:.2f}%\n'.format(100. * count_right / conut_total))
         # 将pred_list结果写入jsonl文件
         output_file = os.path.join(args.output_dir, 'Result.json')
         with open(output_file, 'w') as f:
