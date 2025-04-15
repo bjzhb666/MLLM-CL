@@ -12,7 +12,7 @@ else
 fi
 
 if [ ! -n "$2" ] ;then
-    MODELPATH='./checkpoints/LLaVA/Ability/APP_llava_lora'
+    MODELPATH='./checkpoints/LLaVA/Ability/APP_llava_lora_visual_2e-5_ep3'
 else
     MODELPATH=$2
 fi
@@ -56,3 +56,6 @@ output_file=$RESULT_DIR/$STAGE/merge.jsonl
 for IDX in $(seq 0 $((CHUNKS-1))); do
     cat $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl >> "$output_file"
 done
+
+python -m ETrain.Eval.LLaVA.CoIN.convert_result_to_submission \
+    --result-file $output_file --output_file $RESULT_DIR/$STAGE/our_result_for_submission.tsv

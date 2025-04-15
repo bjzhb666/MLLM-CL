@@ -12,12 +12,12 @@ else
 fi
 
 if [ ! -n "$2" ] ;then
-    MODELPATH='./checkpoints/LLaVA/Ability/SAT_llava_lora'
+    MODELPATH='./checkpoints/LLaVA/Ability/Count_llava_lora_visual-ep1_1e-5_ty_cl_sft'
 else
     MODELPATH=$2
 fi
 if [ ! -n "$3" ] ;then
-    MODELNAME='SAT_sat'
+    MODELNAME='Count_count'
 else
     MODELNAME=$3
 fi
@@ -32,20 +32,35 @@ RESULT_DIR="./results/Ability/$MODELBASE/$MODELNAME"
 # RESULT_DIR="./results/CoIN/LLaVA/OCRVQA"
 DATA_PATH=/data/hongbo_zhao/Ability_data
 
-for IDX in $(seq 0 $((CHUNKS-1))); do
-    CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_sat \
-        --model-path $MODELPATH \
-        --model-base ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
-        --question-file $DATA_PATH/SAT_test/test.json \
-        --image-folder $DATA_PATH/SAT_test/images \
-        --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
-        --num-chunks $CHUNKS \
-        --chunk-idx $IDX \
-        --temperature 0 \
-        --conv-mode vicuna_v1 &
-done
-
-wait
+if [ "$3" = "llava_count" ]; then
+    echo "LLaVA 1.5 test"
+    for IDX in $(seq 0 $((CHUNKS-1))); do
+        CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_sat \
+            --model-path $MODELPATH \
+            --question-file $DATA_PATH/CV-Benchv2/test.json \
+            --image-folder $DATA_PATH/CV-Benchv2 \
+            --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
+            --num-chunks $CHUNKS \
+            --chunk-idx $IDX \
+            --temperature 0 \
+            --conv-mode vicuna_v1 &
+    done
+    wait
+else
+    for IDX in $(seq 0 $((CHUNKS-1))); do
+        CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_sat \
+            --model-path $MODELPATH \
+            --model-base ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
+            --question-file $DATA_PATH/CV-Benchv2/test.json \
+            --image-folder $DATA_PATH/CV-Benchv2 \
+            --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
+            --num-chunks $CHUNKS \
+            --chunk-idx $IDX \
+            --temperature 0 \
+            --conv-mode vicuna_v1 &
+    done
+    wait
+fi
 
 output_file=$RESULT_DIR/$STAGE/merge.jsonl
 
@@ -57,7 +72,14 @@ for IDX in $(seq 0 $((CHUNKS-1))); do
     cat $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl >> "$output_file"
 done
 
-python -m ETrain.Eval.LLaVA.CoIN.eval_sat \
-    --annotation-file $DATA_PATH/SAT_test/test.json \
-    --result-file $output_file \
-    --output-dir $RESULT_DIR/$STAGE \
+if [ "$3" = "llava_count" ]; then
+    python -m ETrain.Eval.LLaVA.CoIN.eval_sat \
+        --annotation-file $DATA_PATH/CV-Benchv2/test.json \
+        --result-file $output_file \
+        --output-dir $RESULT_DIR/$STAGE 
+else
+    python -m ETrain.Eval.LLaVA.CoIN.eval_sat \
+        --annotation-file $DATA_PATH/CV-Benchv2/test.json \
+        --result-file $output_file \
+        --output-dir $RESULT_DIR/$STAGE 
+fi

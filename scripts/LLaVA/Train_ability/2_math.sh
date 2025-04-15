@@ -8,7 +8,7 @@ if [ ! $1 ]; then
 else
     BASE_NAME=$1
 fi
-
+OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/MATH_llava_lora"
 if [ ! $2 ]; then
     USE_PREVIOUS_TASK_MODEL=False
     PREVIOUS_TASK=""
@@ -20,8 +20,14 @@ if [ ! $3 ]; then
     EXPERT=""
 else
     EXPERT="--expert_num $3"
+    OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/MATH_llava_lora_MOE"
+    PREVIOUS_TASK="--previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/OCR_llava_lora_MOE"
 fi
 DATA_PATH=/data/hongbo_zhao/Ability_data
+
+echo ""
+echo "PREVIOUS_TASK: $PREVIOUS_TASK"
+echo ""
 
 deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/LLaVA/train_mem.py \
     --deepspeed ./scripts/zero2.json \
@@ -30,8 +36,8 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     $PREVIOUS_TASK \
     --model_name_or_path ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
     --version $PROMPT_VERSION \
-    --data_path $DATA_PATH/math/train.json \
-    --image_folder $DATA_PATH/math \
+    --data_path $DATA_PATH/math2/train.json \
+    --image_folder $DATA_PATH/math2 \
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
@@ -40,7 +46,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --image_aspect_ratio pad \
     --group_by_modality_length True \
     --bf16 True \
-    --output_dir ./checkpoints/LLaVA/$BASE_NAME/MATH_llava_lora \
+    --output_dir $OUTPUT_DIR \
     --num_train_epochs 1 \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \
@@ -57,5 +63,5 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --gradient_checkpointing True \
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
-    --report_to wandb \
+    --report_to none \
     --run_name "LoRA_math_bs4ac2_lr2e-5"
