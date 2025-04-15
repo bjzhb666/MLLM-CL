@@ -20,13 +20,21 @@ if __name__ == "__main__":
     #     'VizWiz': 'D',
     #     'Grounding': 'B',
     # }
-    GT_map={
-        'fin':'A',
-        'sci':'B',
-        'pathvqa':'C',
-        'drivelm':'D',
-        'rs':'E'
-    }
+    if args.qf in ['fin', 'sci', 'pathvqa', 'drivelm', 'rs']:
+        GT_map={
+            'fin':'A',
+            'sci':'B',
+            'pathvqa':'C',
+            'drivelm':'D',
+            'rs':'E'
+        }
+    else:
+        GT_map = {
+            'ocr':'A',
+            'count':'B',
+            'math':'C',
+            'app':'D'
+        }
     with open(answers_file, "r") as f:
         for line in f:
             data = json.loads(line)
@@ -42,6 +50,7 @@ if __name__ == "__main__":
     task_name = args.qf
     # 统计ans_file中agent_selection的答案
     GT_choose = GT_map[task_name]
+    print(agent_selection_count)
     # 统计GT_choose在agent_selection_count中的数量占比
     if GT_choose is not None:
         GT_count = agent_selection_count.get(GT_choose, 0)
@@ -49,3 +58,6 @@ if __name__ == "__main__":
         # calculate the accuracy
         GT_percentage = GT_count / total_count *100
         print(f'[Info] {task_name} GT_choose: {GT_choose}, GT_count: {GT_count}, total_count: {total_count}, GT_percentage: {GT_percentage}%')
+        output_file = args.answers_file.replace('merge.jsonl','acc.txt')
+        with open(output_file, 'w') as f:
+            f.write(f'[Info] {task_name} GT_choose: {GT_choose}, GT_count: {GT_count}, total_count: {total_count}, GT_percentage: {GT_percentage}%')
