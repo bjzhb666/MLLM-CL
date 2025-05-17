@@ -40,12 +40,10 @@ def eval_single(annotation_file, result_file):
             score=1 if pred == gt else 0,
         ))
     print('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
-    #将结果写入文件
     if args.output_dir is not None:
         output_file = os.path.join(args.output_dir, 'Result.text')
         with open(output_file, 'w') as f:
             f.write('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
-        # 将pred_list结果写入jsonl文件
         output_file = os.path.join(args.output_dir, 'Result.json')
         with open(output_file, 'w') as f:
             for item in pred_list:

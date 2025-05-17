@@ -150,7 +150,7 @@ def choose_ans(routing_outputs, ans_candidates):
     # check the rounting outputs is legal
     if sum(1 for c in routing_outputs if c not in 'ABCD') > 1:
         print(f'[Warning] Routing outputs {routing_outputs} are not legal')
-        # 从0-4中选择一个，选择随机数
+       
         return ans_candidates[random.randint(0, 4)]
         # assert False
     if 'A' in routing_outputs:
@@ -190,7 +190,7 @@ def eval_model(args):
     # Initialize a dictionary to count agent_selection occurrences
     agent_selection_count = {}
     
-    excel_ori = pandas.read_excel('llava_v1.5_7b_MathVista_MINI.xlsx') #  是一个DataFrame
+    excel_ori = pandas.read_excel('llava_v1.5_7b_MathVista_MINI.xlsx') #  a DataFrame
     excel = copy.deepcopy(excel_ori)
     for (input_ids, routing_input_ids, image_tensor), line in tqdm(zip(data_loader, questions), total=len(questions)):
         # print(type(image_tensor))

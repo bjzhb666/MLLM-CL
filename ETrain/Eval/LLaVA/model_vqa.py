@@ -30,11 +30,11 @@ def eval_model(args):
     world_size = int(os.getenv('WORLD_SIZE', '4'))
     
     model = deepspeed.init_inference(
-        model=model,      # Transformers模型
-        mp_size=world_size,        # GPU数量
+        model=model,     
+        mp_size=world_size,        
         dtype = torch.float16,
-        replace_method="auto", # 让DS自动替换层
-        replace_with_kernel_inject=True, # 使用kernel注入
+        replace_method="auto", 
+        replace_with_kernel_inject=True, 
     )
 
     with open(os.path.expanduser(args.question_file), "r") as f:

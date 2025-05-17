@@ -479,9 +479,8 @@ class CoINMOEGate(nn.Module):
     def __init__(self, input_size, expert_num):
 
         super().__init__()
-        # 使用embedding来代替线性层
         self.GateL = nn.Linear(input_size, expert_num, bias=False)
-        self.act = nn.Softmax(dim=1)    # 第0维为batch size
+        self.act = nn.Softmax(dim=1)   
     
     def forward(self, x):
 

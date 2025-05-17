@@ -266,7 +266,6 @@ def create_LLaVA_model(training_args, model_args, data_args, bnb_model_from_pret
     for p in model.get_model().mm_projector.parameters():
         p.requires_grad = True
     
-    # 输出model中可学习的参数
     rank0_print(local_rank, "Learnable Parameters:")
     for name, param in model.named_parameters():
         if param.requires_grad:

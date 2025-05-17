@@ -29,13 +29,10 @@ def eval_single(annotation_file, result_file):
         # type = annotation['type']
         dimension = annotation['type'] # 2D or 3D
         task = annotation['task']
-        # 统计2D和3D的准确率
+       
         pred: str = result['text'].lower().strip().replace(' ', '').replace('\n', '').replace('.', '')
         gt: str =  ground_truth.lower().strip().replace(' ', '').replace('\n', '').replace('.', '')
-        # if pred.startswith(gt) or gt.startswith(pred):
-        #     right += 1
-        # if pred == gt:
-        #     right += 1
+
         score = 0
         if gt in pred:
             right += 1
@@ -51,7 +48,7 @@ def eval_single(annotation_file, result_file):
             task=task,
         ))
     print('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
-    # 统计pred_list中，2D和3D的准确率
+   
     right_2d = 0
     total_2d = 0
     right_3d = 0
@@ -81,7 +78,7 @@ def eval_single(annotation_file, result_file):
     # print('2D Accuracy: {:.2f}%\n'.format(100. * right_2d / total_2d))
     # print('3D Accuracy: {:.2f}%\n'.format(100. * right_3d / total_3d))
     print('Count Accuracy: {:.2f}%\n'.format(100. * count_right / conut_total))
-    #将结果写入文件
+ 
     if args.output_dir is not None:
         output_file = os.path.join(args.output_dir, 'Result.text')
         with open(output_file, 'w') as f:
@@ -89,7 +86,7 @@ def eval_single(annotation_file, result_file):
             # f.write('3D Accuracy: {:.2f}%\n'.format(100. * right_3d / total_3d))
             # f.write('2D Accuracy: {:.2f}%\n'.format(100. * right_2d / total_2d))
             f.write('Count Accuracy: {:.2f}%\n'.format(100. * count_right / conut_total))
-        # 将pred_list结果写入jsonl文件
+
         output_file = os.path.join(args.output_dir, 'Result.json')
         with open(output_file, 'w') as f:
             for item in pred_list:

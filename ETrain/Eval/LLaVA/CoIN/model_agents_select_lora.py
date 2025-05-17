@@ -150,7 +150,7 @@ def choose_ans(routing_outputs, ans_candidates):
     # check the rounting outputs is legal
     if sum(1 for c in routing_outputs if c not in 'ABCDE') > 1:
         print(f'[Warning] Routing outputs {routing_outputs} are not legal')
-        # 从0-4中选择一个，选择随机数
+    
         return ans_candidates[random.randint(0, 4)]
         # assert False
     if 'A' in routing_outputs:

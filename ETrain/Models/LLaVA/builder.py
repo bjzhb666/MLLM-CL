@@ -154,54 +154,6 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
             print("Adding visual LoRA")
             model=PeftModel.from_pretrained(model, model_path)
             model = model.merge_and_unload()
-            # print('Loading visual adapter...')
-            # # 获取当前的rank
-            # local_rank = int(os.environ.get('LOCAL_RANK', 0))
-            # if local_rank==0:
-            #     print(f'Saving vision adapter into {model_path}-vision...')
-            #     ori_vision_tower = copy.deepcopy(vision_tower.vision_tower)
-            #     new_ckpt={}
-            #     ckpt = torch.load(os.path.join(model_path, 'adapter_model.bin'), map_location='cpu')
-            #     for k, v in ckpt.items():
-            #         # new_ckpt[k] = v
-            #         if 'encoder' in k:
-            #             new_ckpt[k.replace('.model.vision_tower.vision_tower', '')] = v
-                
-            #     json_file = os.path.join(model_path, 'adapter_config.json')
-            #     with open(json_file, 'r') as f:
-            #         adapter_config = json.load(f)
-            #     new_adapter_config = copy.deepcopy(adapter_config)
-            #     # 把new_adapter_config中target的名字修改
-            #     for k, v in new_adapter_config.items():
-            #         if k!='target':
-            #             continue
-            #         else:
-            #             target = new_adapter_config['target']
-            #             new_adapter_config['target'] = [item.replace('.model.vision_tower.vision_tower', '') for item in target if 'encoder' in item]
-            #             # new_adapter_config[k.replace()] = v
-                
-            #     # 检查model_path+'-vision'是否存在，如果存在删除
-            #     if os.path.exists(model_path+'-vision'):
-            #         shutil.rmtree(model_path+'-vision')
-            #     os.makedirs(model_path+'-vision', exist_ok=True)
-            #     # save new_adapter_config.json and new ckpt
-            #     torch.save(new_ckpt, model_path+'-vision/adapter_model.bin')
-            #     # save json
-            #     with open(model_path+'-vision/adapter_config.json', 'w') as f:
-            #         json.dump(new_adapter_config, f, indent=4)
-            
-            # vision_tower.vision_tower = PeftModel.from_pretrained(vision_tower.vision_tower, model_path+'-vision').merge_and_unload()
-            # new_vision_tower = vision_tower.vision_tower
-            # # set vision tower for model
-            # model.model.vision_tower.vision_tower = new_vision_tower
-            # if local_rank==0:
-            #     # 检查ori_vision_tower和new_vision_tower的参数是否一致
-            #     for name, param in ori_vision_tower.named_parameters():
-            #         if name in new_vision_tower.state_dict():
-            #             if param.data.ne(new_vision_tower.state_dict()[name].data).any():
-            #                 print(f"Parameter {name} is different")
-            #         else:
-            #             print(f"Parameter {name} not found in new_vision_tower")
         
         vision_tower.to(device=device, dtype=torch.float16)
         image_processor = vision_tower.image_processor

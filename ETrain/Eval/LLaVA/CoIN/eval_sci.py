@@ -42,7 +42,7 @@ def eval_single(annotation_file, result_file):
                 gt_list = gt.split(',')
                 len_gt = len(gt_list)
                 pred_map_list = pred.split(',')
-                # 检查pred_list中有几个gt_list中的元素
+         
                 count = 0
                 for gt in gt_list:
                     if gt in pred_map_list:
@@ -64,12 +64,12 @@ def eval_single(annotation_file, result_file):
             score=item_score,
         ))
     print('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
-    #将结果写入文件
+   
     if args.output_dir is not None:
         output_file = os.path.join(args.output_dir, 'Result.text')
         with open(output_file, 'w') as f:
             f.write('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
-        # 将pred_list结果写入jsonl文件
+        
         output_file = os.path.join(args.output_dir, 'Result.json')
         with open(output_file, 'w') as f:
             for item in pred_list:

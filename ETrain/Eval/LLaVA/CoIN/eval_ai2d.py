@@ -36,17 +36,17 @@ def eval_single(annotation_file, result_file):
         # if pred == gt:
         #     right += 1
         score = 0
-        if ' ' in gt: # 答案不止有一个单词
+        if ' ' in gt: 
             if gt in pred:
                 right += 1
                 score = 1
-        else: # 答案只有一个单词
+        else: 
             gt = gt.replace('.', '')
             if ' ' in pred:
                 if (' '+gt) in pred or (gt+' ') in pred or (gt+'.') in pred or (gt+',') in pred:
                     right += 1
                     score = 1
-            else: # pred 只有一个单词
+            else: 
                 if gt in pred:
                     right += 1
                     score = 1
@@ -59,12 +59,12 @@ def eval_single(annotation_file, result_file):
             score=score,
         ))
     print('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
-    #将结果写入文件
+
     if args.output_dir is not None:
         output_file = os.path.join(args.output_dir, 'Result.text')
         with open(output_file, 'w') as f:
             f.write('Samples: {}\nAccuracy: {:.2f}%\n'.format(total, 100. * right / total))
-        # 将pred_list结果写入jsonl文件
+       
         output_file = os.path.join(args.output_dir, 'Result.json')
         with open(output_file, 'w') as f:
             for item in pred_list:

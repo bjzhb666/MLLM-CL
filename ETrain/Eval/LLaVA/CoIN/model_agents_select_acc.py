@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     agent_selection_count = {}
 
-    answers_file = args.answers_file  # 替换为你的答案文件路径
+    answers_file = args.answers_file 
 
     # GT_map={
     #     'sqa': 'C',
@@ -46,12 +46,12 @@ if __name__ == "__main__":
             else:
                 agent_selection_count[routing_outputs] = 1
 
-    # TODO:统计选择正确率
+  
     task_name = args.qf
-    # 统计ans_file中agent_selection的答案
+ 
     GT_choose = GT_map[task_name]
     print(agent_selection_count)
-    # 统计GT_choose在agent_selection_count中的数量占比
+   
     if GT_choose is not None:
         GT_count = agent_selection_count.get(GT_choose, 0)
         total_count = sum(agent_selection_count.values())

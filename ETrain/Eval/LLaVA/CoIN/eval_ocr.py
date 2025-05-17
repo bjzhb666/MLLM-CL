@@ -39,7 +39,6 @@ def eval_single(annotation_file, result_file):
         # import pdb; pdb.set_trace()
         annotation = annotations[result['question_id']]
         ground_truths = annotation['answer']
-        # 如果ground_truth不是list，转换为list
         if not isinstance(ground_truths, list):
             ground_truths = [ground_truths]
         problem = result['prompt']
@@ -95,12 +94,12 @@ def eval_single(annotation_file, result_file):
     final_score_dict['Final Score Norm'] = (float(final_score_dict['Final Score']) / 10)
         
     print('Samples: {}\nFinal_score_dict: {}\n'.format(total, final_score_dict))
-    #将结果写入文件
+    
     if args.output_dir is not None:
         output_file = os.path.join(args.output_dir, 'Result.text')
         with open(output_file, 'w') as f:
             f.write('Samples: {}\nFinal_score_dict: {}\n'.format(total, final_score_dict))
-        # 将pred_list结果写入jsonl文件
+        
         output_file = os.path.join(args.output_dir, 'Result.json')
         with open(output_file, 'w') as f:
             for item in pred_list:
