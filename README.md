@@ -1,28 +1,42 @@
 # MLLM-CL: Continual Learning for Multimodal Large Language Models
+![MLLM-CL Benchmark](image.png)
+
+
+This is the official repo of MLLM-CL and MR-LoRA. MLLM-CL is a novel benchmark encompassing domain and ability continual learning, where the former focuses on independently and identically distributed (IID) evaluation across evolving mainstream domains, whereas the latter evaluates on non-IID scenarios with emerging model ability. MR-LoRA prevents catastrophic interference through parameter isolation and an MLLM-based routing mechanism. For more details, please refer to: 
+
+**MLLM-CL: Continual Learning for Multimodal Large Language Models** [[paper]()].
 
 [‪Hongbo Zhao](https://scholar.google.com/citations?user=Gs22F0UAAAAJ&hl=zh-CN), [Fei Zhu](https://impression2805.github.io/), Rundong Wang, [‪Gaofeng Meng](https://scholar.google.com/citations?hl=zh-CN&user=5hti_r0AAAAJ), [‪Zhaoxiang Zhang‬](https://scholar.google.com/citations?hl=zh-CN&user=qxWfV6cAAAAJ)
 
-![alt text](image.png)
 
-This is the official repo of MLLM-CL and MR-LoRA.
+## MLLM-CL Benchmark
+MLLM-CL is a benchmark for continual learning in multimodal large language models (MLLMs). It consists of two main components: domain continual learning and ability continual learning. The benchmark includes a variety of datasets and tasks to evaluate the performance of MLLMs in evolving scenarios.
+### Domain Continual Learning
+Continually adding domain knowledge is crucial for constructing a powerful MLLM.
 
-## Abstract
-Recent Multimodal Large Language Models (MLLMs) excel in vision-language understanding but face challenges in adapting to dynamic real-world scenarios that require continuous integration of new knowledge and skills. While continual learning (CL) offers a potential solution, existing benchmarks and methods suffer from critical limitations. In this paper, we introduce MLLM-CL, a novel benchmark encompassing domain and ability continual learning, where the former focuses on independently and identically distributed (IID) evaluation across evolving mainstream domains, whereas the latter evaluates on non-IID scenarios with emerging model ability. Methodologically, we propose preventing catastrophic interference through parameter isolation and an MLLM-based routing mechanism. Extensive experiments demonstrate that our approach can integrate domain-specific knowledge and functional abilities with minimal forgetting, significantly outperforming existing methods. Our benchmark and code will be publicly available.
+To achieve this goal, we propose domain continual learning and choose five mainstream and common domains: remote sensing, medical, science, autonomous driving and finance.
+In domain continual learning, the training 
+### Ability Continual Learning
+Domain continual learning assumes that training and test data are IID.
+However, achieving IID between training and test sets is often challenging in real-world scenarios.
 
-## Install
+We select four fundamental abilities for the MLLM to learn sequentially: OCR, math \& logic, visual perception and GUI agent.
+
+## MR-LoRA
+
+![MR-LoRA framework](image-1.png)
+
+Our MR-LoRA performs two-stage inference for a given multimodal input, consisting of a routing phase followed by a prediction phase. In the first stage, the expert selection router is performed to select a domain or ability-specific expert. Then, the selected expert is combined with the pre-trained backbone to output the final response.
+## Installation
 1. Clone this repository and navigate to CoIN folder
 ``` 
-git clone https://github.com/zackschen/CoIN.git
+git clone https://github.com/bjzhb666/Coin.git
 cd CoIN 
 ```
 2. Install Package
 ```
-conda create -n coin python=3.10 -y
-conda activate coin
-pip install --upgrade pip -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
-pip config set global.cache_dir "/root/data/tmp"
-pip install llava -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
-pip install -e . -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+conda env create -f environment.yaml
+conda activate mrlora
 ```
 
 3. Install additional packages for training cases
@@ -33,27 +47,15 @@ pip install flash-attn==2.7.0.post2 --no-build-isolation -i https://mirrors.tuna
 
 huggingface-cli download liuhaotian/llava-v1.5-7b --local-dir checkpoints/LLaVA/Vicuna/llava-7b-v1.5
 huggingface-cli download openai/clip-vit-large-patch14-336 --local-dir checkpoints/LLaVA/clip-vit-large-patch14-336
+
 huggingface-cli download liuhaotian/llava-v1.5-mlp2x-336px-pretrain-vicuna-7b-v1.5 --local-dir checkpoints/LLaVA/Vicuna/vicuna-7b-v.15-projector
 huggingface-cli download lmsys/vicuna-7b-v1.5  --local-dir checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5
 ```
 
-This repo is based on [LLaVA](https://github.com/haotian-liu/LLaVA). 
 If you meet a problem, maybe you could find some solutions in issuses.
 
 ## Dataset
-Please download the images from the constituting dataset: ScienceQA, VQAv2, VizWiz, TextVQA, GQA, OCR-VQA, ImageNet, RefCOCO, RefCOCO+, and RefCOCOg.
-|  Image Source   | Download Path  |
-|  :----:  | :----:  |
-| COCO | [train2014](http://images.cocodataset.org/zips/train2014.zip), [test2015](http://images.cocodataset.org/zips/test2015.zip), [val2014](http://images.cocodataset.org/zips/val2014.zip) |
-| RefCOCO  | [annotation](https://bvisionweb1.cs.unc.edu/licheng/referit/data/refcoco.zip) | 
-| RefCOCO+  | [annotation](https://bvisionweb1.cs.unc.edu/licheng/referit/data/refcoco+.zip) | 
-| RefCOCOg  | [annotation](https://bvisionweb1.cs.unc.edu/licheng/referit/data/refcocog.zip) | 
-| ImageNet  | [images](https://image-net.org/challenges/LSVRC/index.php) | 
-| OCR-VQA  | [images](https://drive.google.com/drive/folders/1_GYPY5UkUy7HIcR0zq3ZCFgeZN7BAfm_) | 
-| GQA  | [images](https://downloads.cs.stanford.edu/nlp/data/gqa/images.zip) | 
-| TextVQA  | [train](https://dl.fbaipublicfiles.com/textvqa/images/train_val_images.zip),[test](https://dl.fbaipublicfiles.com/textvqa/images/test_images.zip) | 
-| ScienceQA  | [images](https://drive.google.com/drive/folders/1w8imCXWYn2LxajmGeGH_g5DaL2rabHev) | 
-| VizWiz  | [train](https://vizwiz.cs.colorado.edu/VizWiz_final/images/train.zip), [val](https://vizwiz.cs.colorado.edu/VizWiz_final/images/val.zip), [test](https://vizwiz.cs.colorado.edu/VizWiz_final/images/test.zip) | 
+Please download the images of MLLM-CL from huggingface.: 
 
 After downloading all of them, organize the data as follows:
 ```
