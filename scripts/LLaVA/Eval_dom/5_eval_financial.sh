@@ -19,7 +19,7 @@ else
     MODELPATH=$2
 fi
 if [ ! -n "$3" ] ;then
-    MODELNAME='FinVis_finvis'
+    MODELNAME='Fin_fin'
 else
     MODELNAME=$3
 fi

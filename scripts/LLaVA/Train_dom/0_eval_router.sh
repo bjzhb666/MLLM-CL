@@ -29,8 +29,15 @@ else
     MODELPATH=$4
 fi
 
-RESULT_DIR="results/Domain/Router/$DATASET"
-ALL_RESULT_DIR="results/CoIN/LLaVA" 
+# if [ ! -n "$5" ] ;then
+#     RANK=""
+# else
+#     RANK=$5
+# fi
+
+RESULT_DIR="results/Domain/RouterACC/$DATASET"
+# ALL_RESULT_DIR="results/CoIN/RANK$RANK" 
+ALL_RESULT_DIR="results/CoIN/LLaVA"
 DATA_PATH=/data/hongbo_zhao/data/Domain_data
 
 

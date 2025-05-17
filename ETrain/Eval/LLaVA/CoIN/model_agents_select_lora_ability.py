@@ -227,25 +227,24 @@ def eval_model(args):
         print(f"Routing outputs: {routing_outputs}")
         # save all routing outputs
         final_ans = choose_ans(routing_outputs, ans_candidates)
-        if args.qf=='count' or args.qf=='ocr' or args.qf == 'app':
-            # update agent_selection_count
-            if routing_outputs in agent_selection_count:
-                agent_selection_count[routing_outputs] += 1
-            else:
-                agent_selection_count[routing_outputs] = 1
-            ans_id = shortuuid.uuid()
-            ans_file.write(json.dumps({"question_id": idx,
-                                    "prompt": cur_prompt,
-                                    "agent_selection": routing_outputs,
-                                    "text": final_ans,
-                                    "answer_id": ans_id,
-                                    "model_id": model_name,
-                                    "metadata": {}}) + "\n")
-        elif args.qf == 'math':
+        # if args.qf=='count' or args.qf=='ocr' or args.qf == 'app':
+        # update agent_selection_count
+        if routing_outputs in agent_selection_count:
+            agent_selection_count[routing_outputs] += 1
+        else:
+            agent_selection_count[routing_outputs] = 1
+        ans_id = shortuuid.uuid()
+        ans_file.write(json.dumps({"question_id": idx,
+                                "prompt": cur_prompt,
+                                "agent_selection": routing_outputs,
+                                "text": final_ans,
+                                "answer_id": ans_id,
+                                "model_id": model_name,
+                                "metadata": {}}) + "\n")
+        if args.qf == 'math':
             id_excel = int(idx.replace("testmini_",""))
             excel.at[id_excel, 'prediction'] = final_ans
-        else:
-            assert False, f"Unknown question type: {args.qf}"
+
             
     ans_file.close()
     if args.qf=='math':

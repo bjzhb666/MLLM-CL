@@ -9,7 +9,7 @@ else
     BASE_NAME=$1
 fi
 
-OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/Sci_llava_lora"
+OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/Sci_llava_lora_debuglr2e-4"
 if [ ! $2 ]; then
     USE_PREVIOUS_TASK_MODEL=False
     PREVIOUS_TASK=""
@@ -57,7 +57,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --gradient_accumulation_steps 2 \
     --evaluation_strategy "no" \
     --save_strategy "no" \
-    --learning_rate 2e-5 \
+    --learning_rate 2e-4 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \

@@ -25,12 +25,21 @@ fi
 
 if [ ! -n "$4" ] ;then
     MODELPATH='checkpoints/Router_Ability/Router_llava_lora_5e-6-ep30'
+    # MODELPATH='checkpoints/Router_Ability/task3-Router_llava_lora_5e-6-ep30'
 else
     MODELPATH=$4
 fi
 
-RESULT_DIR="results/Ability/Router/$DATASET"
-ALL_RESULT_DIR="results/Ability/LLaVA" 
+if [ $QF == "math" ]; then
+    gpu_list="${CUDA_VISIBLE_DEVICES:-0}" # 
+    # gpu_list="2,3"
+    IFS=',' read -ra GPULIST <<< "$gpu_list"
+
+    CHUNKS=${#GPULIST[@]}
+fi
+
+RESULT_DIR="results/Ability/Routeracc/$DATASET" # 我们方法结果保存路径
+ALL_RESULT_DIR="results/Ability/LLaVA" # 所有的交叉推理结果
 DATA_PATH=/data/hongbo_zhao/Ability_data
 IMAGE_FOLDER=$DATA_PATH/$DATASET
 

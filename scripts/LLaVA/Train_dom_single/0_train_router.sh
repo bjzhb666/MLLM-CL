@@ -1,14 +1,14 @@
 # train rounter with lora using merge lora as initial model
 
-Train_Epoch=80
-SAVE_DIR=./checkpoints/Router/Router_llava_lora_5e-6-ep$Train_Epoch
+Train_Epoch=40
+SAVE_DIR=./checkpoints/Router/Router_llava_lora_5e-6-ep$Train_Epoch-task4
 
 deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/LLaVA/train_mem.py \
     --deepspeed ./scripts/zero2.json \
     --lora_enable True --lora_r 128 --lora_alpha 256 --mm_projector_lr 5e-6 \
     --model_name_or_path ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
-    --data_path router_use/Router_train10.json \
-    --image_folder router_use/sample_images10 \
+    --data_path router_use/task4Router_train30.json \
+    --image_folder router_use/num4sample_images30 \
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
     --previous_task_model_path checkpoints/LLaVA/domain_llava_lora_merged0.2 \
     --mm_projector_type mlp2x_gelu \
@@ -35,7 +35,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --gradient_checkpointing True \
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
-    --report_to wandb \
+    --report_to none \
     --run_name "LoRA_Router_bs4ac1_lr5e-6-ep$Train_Epoch"
 
 # find $SAVE_DIR/ -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +

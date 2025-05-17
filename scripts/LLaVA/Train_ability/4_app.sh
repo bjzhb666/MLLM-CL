@@ -65,4 +65,5 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
     --report_to none \
-    --run_name "LoRA_APP_bs4ac2_lr2e-5"
+    --run_name "LoRA_APP_bs4ac2_lr2e-5" \
+    --use_vision_lora True

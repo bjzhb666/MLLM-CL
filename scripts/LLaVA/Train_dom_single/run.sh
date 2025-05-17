@@ -13,7 +13,7 @@
 # bash scripts/LLaVA/Eval_dom/14_eval_remotesensing.sh ""
 # bash scripts/LLaVA/Eval_dom/15_eval_drivelm.sh ""
 # bash scripts/LLaVA/Eval_dom/11_eval_medical.sh ""
-bash scripts/LLaVA/Eval_dom/11_eval_medical.sh Finetune2ep ./checkpoints/LLaVA/CoINep3/Medical_llava_lora
+# bash scripts/LLaVA/Eval_dom/11_eval_medical.sh Finetune2ep ./checkpoints/LLaVA/CoINep3/Medical_llava_lora
 
 # vision lora test,  not available
 # bash scripts/LLaVA/Eval_dom/14_eval_remotesensing.sh ""  ./checkpoints/LLaVA/CoIN/RemoteSensing_llava_lora "" LlavaVision

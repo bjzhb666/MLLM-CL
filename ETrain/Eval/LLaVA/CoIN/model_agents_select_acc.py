@@ -61,3 +61,7 @@ if __name__ == "__main__":
         output_file = args.answers_file.replace('merge.jsonl','acc.txt')
         with open(output_file, 'w') as f:
             f.write(f'[Info] {task_name} GT_choose: {GT_choose}, GT_count: {GT_count}, total_count: {total_count}, GT_percentage: {GT_percentage}%')
+            f.write('\n')
+            f.write('agent_selection_count: ')
+            f.write(str(agent_selection_count))
+            f.write('\n')

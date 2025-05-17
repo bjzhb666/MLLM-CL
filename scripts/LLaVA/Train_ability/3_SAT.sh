@@ -39,7 +39,6 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --data_path $DATA_PATH/tallyqa150k/ty_cl_sft.json \
     --image_folder $DATA_PATH/tallyqa150k \
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
-    --pretrain_mm_mlp_adapter ./checkpoints/LLaVA/Vicuna/vicuna-7b-v.15-projector/mm_projector.bin \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
     --mm_use_im_start_end False \
@@ -65,4 +64,5 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
     --report_to none \
-    --run_name "LoRA_SAT_bs4ac2_lr2e-5"
+    --run_name "LoRA_SAT_bs4ac2_lr2e-5" \
+    --use_vision_lora True

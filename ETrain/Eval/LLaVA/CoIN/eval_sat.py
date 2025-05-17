@@ -37,7 +37,7 @@ def eval_single(annotation_file, result_file):
         # if pred == gt:
         #     right += 1
         score = 0
-        if gt == pred:
+        if gt in pred:
             right += 1
             score = 1
         # save the result as jsonl

@@ -4,25 +4,24 @@ MODEL_VERSION="vicuna-7b-v1.5"
 ################## VICUNA ##################
 
 if [ ! $1 ]; then
-    BASE_NAME="Ability"
+    BASE_NAME="AbilityReplay"
 else
     BASE_NAME=$1
 fi
-OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/APP_llava_lora"
-
+OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/Count_llava_lora"
 if [ ! $2 ]; then
     USE_PREVIOUS_TASK_MODEL=False
     PREVIOUS_TASK=""
 else
     USE_PREVIOUS_TASK_MODEL=True
-    PREVIOUS_TASK="--previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/Count_llava_lora"
+    PREVIOUS_TASK="--previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/MATH_llava_lora"
 fi
 if [ ! $3 ]; then
     EXPERT=""
 else
     EXPERT="--expert_num $3"
-    OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/APP_llava_lora_MOE"
-    PREVIOUS_TASK="--previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/Count_llava_lora_MOE"
+    OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/Count_llava_lora_MOE"
+    PREVIOUS_TASK="--previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/MATH_llava_lora_MOE"
 fi
 DATA_PATH=/data/hongbo_zhao/Ability_data
 
@@ -37,8 +36,8 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     $PREVIOUS_TASK \
     --model_name_or_path ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
     --version $PROMPT_VERSION \
-    --data_path $DATA_PATH/App/train.json \
-    --image_folder $DATA_PATH/App \
+    --data_path /data/hongbo_zhao/Ability_data/replay_json/task3replay30.json \
+    --image_folder $DATA_PATH \
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
@@ -48,7 +47,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --group_by_modality_length True \
     --bf16 True \
     --output_dir $OUTPUT_DIR \
-    --num_train_epochs 3 \
+    --num_train_epochs 1 \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \
     --gradient_accumulation_steps 2 \
@@ -65,4 +64,4 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
     --report_to none \
-    --run_name "LoRA_APP_bs4ac2_lr2e-5"
+    --run_name "LoRA_SAT_bs4ac2_lr2e-5"

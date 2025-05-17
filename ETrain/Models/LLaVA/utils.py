@@ -271,5 +271,6 @@ def create_LLaVA_model(training_args, model_args, data_args, bnb_model_from_pret
     for name, param in model.named_parameters():
         if param.requires_grad:
             rank0_print(local_rank, name)
+    model.print_trainable_parameters()
 
     return model, tokenizer

@@ -441,7 +441,7 @@ def evaluate(eval_file, **judge_kwargs):
         suffix = eval_file.split('.')[-1]
         storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
         tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
-        nproc = judge_kwargs.pop('nproc', 4)
+        nproc = judge_kwargs.pop('nproc', 50)
         # nproc = 1
 
         if not osp.exists(storage):

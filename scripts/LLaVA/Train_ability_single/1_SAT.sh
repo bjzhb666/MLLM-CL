@@ -36,7 +36,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --image_aspect_ratio pad \
     --group_by_modality_length True \
     --bf16 True \
-    --output_dir ./checkpoints/LLaVA/$BASE_NAME/Count_llava_lora_visual-ep1_1e-5_ty_cl_sft \
+    --output_dir ./checkpoints/LLaVA/$BASE_NAME/Count_llava_lora_visual-ep1_2e-4_ty_cl_sft \
     --num_train_epochs 1 \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \
@@ -53,6 +53,6 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --gradient_checkpointing True \
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
-    --report_to none \
-    --run_name "LoRA_Count_bs4ac2_lr2e-5-ep1" \
+    --report_to wandb \
+    --run_name "LoRA_Count_bs4ac2_lr2e-4-ep1" \
     --use_vision_lora True

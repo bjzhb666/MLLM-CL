@@ -41,11 +41,11 @@ def eval_single(annotation_file, result_file):
             if 'Which states' in problem:
                 gt_list = gt.split(',')
                 len_gt = len(gt_list)
-                pred_list = pred.split(',')
+                pred_map_list = pred.split(',')
                 # 检查pred_list中有几个gt_list中的元素
                 count = 0
                 for gt in gt_list:
-                    if gt in pred_list:
+                    if gt in pred_map_list:
                         count += 1
                 item_score = count / len_gt
                 right += item_score
