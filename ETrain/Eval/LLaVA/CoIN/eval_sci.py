@@ -31,7 +31,7 @@ def eval_single(annotation_file, result_file):
         
         pred: str = result['text'].lower()
         gt: str =  ground_truth.lower()
-        if image.split('/')[-1].split('_')[0]=="AI2D" or image.split('/')[-1].split('_')[0]=="TQA" or image.split('/')[-1].split('_')[0]=="VQA":
+        if image.split('/')[-1].split('_')[0]=="AI2D" or image.split('/')[-1].split('_')[0]=="TQA" or image.split('/')[-1].split('_')[0]=="VQA" or image.split('/')[-1].split('_')[0]=="SciVerse":
             if gt == pred:
                 item_score = 1
                 right += item_score
