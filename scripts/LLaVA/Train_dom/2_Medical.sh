@@ -4,7 +4,7 @@ MODEL_VERSION="vicuna-7b-v1.5"
 ################## VICUNA ##################
 
 if [ ! $1 ]; then
-    BASE_NAME="CoIN"
+    BASE_NAME="Finetune-CL"
 else
     BASE_NAME=$1
 fi

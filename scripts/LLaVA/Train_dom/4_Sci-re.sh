@@ -40,7 +40,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     $PREVIOUS_TASK \
     --model_name_or_path ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
     --version $PROMPT_VERSION \
-    --data_path $DATA_PATH/replay_json/task4replay30.json \
+    --data_path /data/hongbo_zhao/code/LLaVA/Domain_data/task4replay20_train.json \
     --image_folder $DATA_PATH \
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
     --mm_projector_type mlp2x_gelu \
@@ -67,5 +67,5 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --gradient_checkpointing True \
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
-    --report_to none \
+    --report_to wandb \
     --run_name "LoRA_Sci_bs4ac2_lr2e-5-ep2"

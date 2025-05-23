@@ -36,7 +36,7 @@ if [ "$3" = "llava_sci" ]; then
         CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_ai2d \
             --model-path $MODELPATH \
             --question-file $DATA_PATH/Sci/test.json \
-            --image-folder $DATA_PATH \
+            --image-folder $DATA_PATH/Sci \
             --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
             --num-chunks $CHUNKS \
             --chunk-idx $IDX \
@@ -51,7 +51,7 @@ else
             --model-path $MODELPATH \
             --model-base ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
             --question-file $DATA_PATH/Sci/test.json \
-            --image-folder $DATA_PATH \
+            --image-folder $DATA_PATH/Sci \
             --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
             --num-chunks $CHUNKS \
             --chunk-idx $IDX \

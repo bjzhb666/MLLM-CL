@@ -1,14 +1,14 @@
 # train rounter with lora using merge lora as initial model
 
 Train_Epoch=40
-SAVE_DIR=./checkpoints/Router/Router_llava_lora_5e-6-ep$Train_Epoch-task4
+SAVE_DIR=./checkpoints/Router/Router_llava_lora_5e-6-ep$Train_Epoch-task5-new
 
 deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/LLaVA/train_mem.py \
     --deepspeed ./scripts/zero2.json \
     --lora_enable True --lora_r 128 --lora_alpha 256 --mm_projector_lr 5e-6 \
     --model_name_or_path ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
-    --data_path router_use/task4Router_train30.json \
-    --image_folder router_use/num4sample_images30 \
+    --data_path /data/hongbo_zhao/code/LLaVA/Domain_data/task5Router_train20.json \
+    --image_folder /data/hongbo_zhao/code/LLaVA/Domain_data/num5sample_images20 \
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
     --previous_task_model_path checkpoints/LLaVA/domain_llava_lora_merged0.2 \
     --mm_projector_type mlp2x_gelu \

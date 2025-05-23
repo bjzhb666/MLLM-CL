@@ -1,6 +1,6 @@
 # bash scripts/LLaVA/Train_dom/0_eval_router.sh Medical/data pathvqa
 # bash scripts/LLaVA/Train_dom/0_eval_router.sh AD/DriveLM drivelm
-bash scripts/LLaVA/Train_dom/0_eval_router.sh Sci sci
+# bash scripts/LLaVA/Train_dom/0_eval_router.sh Sci sci
 # bash scripts/LLaVA/Train_dom/0_eval_router.sh Fin fin 
 # bash scripts/LLaVA/Train_dom/0_eval_router.sh RemoteSensing rs
 
@@ -53,3 +53,9 @@ bash scripts/LLaVA/Train_dom/0_eval_router.sh Sci sci
 # bash scripts/LLaVA/Train_dom/0_eval_router.sh Sci sci "" "" 256
 # bash scripts/LLaVA/Train_dom/0_eval_router.sh Fin fin "" "" 256
 # bash scripts/LLaVA/Train_dom/0_eval_router.sh RemoteSensing rs "" "" 256
+
+bash scripts/LLaVA/Train_dom/0_eval_router.sh Med pathvqa
+bash scripts/LLaVA/Train_dom/0_eval_router.sh AD drivelm
+bash scripts/LLaVA/Train_dom/0_eval_router.sh Sci sci
+bash scripts/LLaVA/Train_dom/0_eval_router.sh Fin fin
+bash scripts/LLaVA/Train_dom/0_eval_router.sh RS rs

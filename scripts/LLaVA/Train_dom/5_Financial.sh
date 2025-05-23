@@ -4,7 +4,7 @@ MODEL_VERSION="vicuna-7b-v1.5"
 ################## VICUNA ##################
 
 if [ ! $1 ]; then
-    BASE_NAME="CoIN"
+    BASE_NAME="Finetune-CL"
 else
     BASE_NAME=$1
 fi
@@ -65,5 +65,5 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --gradient_checkpointing True \
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
-    --report_to wandb \
-    --run_name "LoRA_Fin_bs4ac2_lr2e-5"
+    --report_to none \
+    --run_name "LoRA_Fin_bs4ac2_lr2e-5-Finetune-CL"

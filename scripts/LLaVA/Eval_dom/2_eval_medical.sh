@@ -35,8 +35,8 @@ if [ "$3" = "llava_pathvqa" ]; then
     for IDX in $(seq 0 $((CHUNKS-1))); do
         CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_pvqa \
             --model-path $MODELPATH \
-            --question-file $DATA_PATH/Medical/data/test.json \
-            --image-folder $DATA_PATH/Medical/data \
+            --question-file $DATA_PATH/Med/test.json \
+            --image-folder $DATA_PATH/Med \
             --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
             --num-chunks $CHUNKS \
             --chunk-idx $IDX \
@@ -50,8 +50,8 @@ else
         CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m ETrain.Eval.LLaVA.CoIN.model_ai2d \
             --model-path $MODELPATH \
             --model-base ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
-            --question-file $DATA_PATH/Medical/data/test.json \
-            --image-folder $DATA_PATH/Medical/data \
+            --question-file $DATA_PATH/Med/test.json \
+            --image-folder $DATA_PATH/Med \
             --answers-file $RESULT_DIR/$STAGE/${CHUNKS}_${IDX}.jsonl \
             --num-chunks $CHUNKS \
             --chunk-idx $IDX \
@@ -72,6 +72,6 @@ for IDX in $(seq 0 $((CHUNKS-1))); do
 done
 
 python -m ETrain.Eval.LLaVA.CoIN.eval_pvqa \
-    --annotation-file $DATA_PATH/Medical/data/test.json \
+    --annotation-file $DATA_PATH/Med/test.json \
     --result-file $output_file \
     --output-dir $RESULT_DIR/$STAGE \

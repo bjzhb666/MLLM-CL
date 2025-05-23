@@ -4,12 +4,12 @@ MODEL_VERSION="vicuna-7b-v1.5"
 ################## VICUNA ##################
 
 if [ ! $1 ]; then
-    BASE_NAME="CoIN"
+    BASE_NAME="Finetune-CL"
 else
     BASE_NAME=$1
 fi
 
-OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/Sci_llava_lora_debuglr2e-4"
+OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/Sci_llava_lora"
 if [ ! $2 ]; then
     USE_PREVIOUS_TASK_MODEL=False
     PREVIOUS_TASK=""
@@ -41,7 +41,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --model_name_or_path ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
     --version $PROMPT_VERSION \
     --data_path $DATA_PATH/Sci/train.json \
-    --image_folder $DATA_PATH \
+    --image_folder $DATA_PATH/Sci \
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
@@ -50,14 +50,14 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --image_aspect_ratio pad \
     --group_by_modality_length True \
     --bf16 True \
-    --output_dir $OUTPUT_DIR \
+    --output_dir ${OUTPUT_DIR} \
     --num_train_epochs 2 \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \
     --gradient_accumulation_steps 2 \
     --evaluation_strategy "no" \
     --save_strategy "no" \
-    --learning_rate 2e-4 \
+    --learning_rate 2e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \
@@ -67,5 +67,5 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --gradient_checkpointing True \
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
-    --report_to wandb \
-    --run_name "LoRA_Sci_bs4ac2_lr2e-5-ep2"
+    --report_to none \
+    --run_name "LoRA_Sci_bs4ac2_lr2e-5-ep2-Finetune-CL"

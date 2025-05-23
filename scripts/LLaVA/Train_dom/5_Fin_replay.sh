@@ -8,7 +8,7 @@ if [ ! $1 ]; then
 else
     BASE_NAME=$1
 fi
-OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/FinVis_llava_lora_replay"
+OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/FinVis_llava_lora"
 if [ ! $2 ]; then
 #     USE_PREVIOUS_TASK_MODEL=False
     PREVIOUS_TASK=""
@@ -22,7 +22,7 @@ if [ ! $3 ]; then
 else
     EXPERT="--expert_num $3"
     PREVIOUS_TASK="--previous_task_model_path ./checkpoints/LLaVA/$BASE_NAME/Sci_llava_lora_MOE"
-    OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/FinVis_llava_lora_MOE_replay"
+    OUTPUT_DIR="./checkpoints/LLaVA/$BASE_NAME/FinVis_llava_lora_MOE"
 fi
 
 DATA_PATH=/data/hongbo_zhao/data/Domain_data
@@ -38,8 +38,8 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     $PREVIOUS_TASK \
     --model_name_or_path ./checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5 \
     --version $PROMPT_VERSION \
-    --data_path $DATA_PATH/train_replay20.json \
-    --image_folder $DATA_PATH/replay_images \
+    --data_path /data/hongbo_zhao/code/LLaVA/Domain_data/task5replay20_train.json \
+    --image_folder $DATA_PATH\
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
@@ -65,5 +65,5 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --gradient_checkpointing True \
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
-    --report_to none \
+    --report_to wandb \
     --run_name "LoRA_Finreplay20_bs4ac2_lr2e-5"

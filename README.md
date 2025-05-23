@@ -51,42 +51,106 @@ huggingface-cli download openai/clip-vit-large-patch14-336 --local-dir checkpoin
 huggingface-cli download liuhaotian/llava-v1.5-mlp2x-336px-pretrain-vicuna-7b-v1.5 --local-dir checkpoints/LLaVA/Vicuna/vicuna-7b-v.15-projector
 huggingface-cli download lmsys/vicuna-7b-v1.5  --local-dir checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5
 ```
-
-If you meet a problem, maybe you could find some solutions in issuses.
+4. Prepare the API key
+The evaluation of Math & Logic tasks requires the OpenAI API key.
+Create an `.env` file in the root directory of the project and add your OpenAI API key:
+```
+# .env file
+# QwenVL APIs
+DASHSCOPE_API_KEY=
+# Gemini w. Google Cloud Backends
+GOOGLE_API_KEY=
+# OpenAI API
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+OPENAI_API_BASE=
+# StepAI API
+STEPAI_API_KEY=
+# REKA API
+REKA_API_KEY=
+# GLMV API
+GLMV_API_KEY=
+# CongRong API
+CW_API_BASE=
+CW_API_KEY=
+# SenseChat-V API
+SENSECHAT_AK=
+SENSECHAT_SK=
+# Hunyuan-Vision API
+HUNYUAN_SECRET_KEY=
+HUNYUAN_SECRET_ID=
+# LMDeploy API
+LMDEPLOY_API_BASE=
+EVAL_PROXY=
+LMUData=/data/hongbo_zhao/code/VLMEvalKit/LMUData
+```
 
 ## Dataset
-Please download the images of MLLM-CL from huggingface.: 
-
+Please download the images of MLLM-CL from huggingface or modelscope: 
+[modelscope](https://www.modelscope.cn/datasets/zhaohongbo/MLLM-CL/summary)
 After downloading all of them, organize the data as follows:
+
+Domain Continual Learning Data:
 ```
-├── COCO2014
-│   └── train2014
-├── GQA
+├── RS
 │   └── images
-├── OCR-VQA
+|   └──train.json
+|   └──test.json
+├── Med
 │   └── images
-├── TextVQA
-│   └── train_images
-│   └── test_images
+|   └──train.json
+|   └──test.json
+├── AD
+│   └── images
+|   └──train.json
+|   └──test.json
+├── Fin
+│   └── images
+│   └── test.sjon
+│   └── train.json
+├── Sci
+|   └── images
+|   └──train.json
+|   └──test.json
+├── task5Router_train20.json
+├── task5replay20_train.json
+├── num5sample_images20/
+```
+Ability Continual Learning Data:
+```
+├── OCR
+|   └── images
+|   └──train.json
+├── OCR_test
+|   └── images
+|   └──test.json
+├── Math
+|   └── images
+|   └──train.json
+├── Math_test
+|   └── images
+|   └──test.json
+├── APP
+|   └── images
+|   └──train.json
+├── APP_test
+|   └── images
+|   └──test.json
+├── VP
+|   └── images
+|   └──train.json
+├── VP_test
+|   └── images
+|   └──test.json
+├── Router_train20.json
+├── replay20.json
+├── sample_images20/
 ```
 
-Then, please download the instructions from our datasets path: [CoIN_Dataset](https://huggingface.co/datasets/Zacks-Chen/CoIN/tree/main)
-then, organize the instructions as follows:
-```
-├── Instruction_Original
-│   └── GQA
-│       └── train.json
-│       └── test.json
-│   └── ScienceQA
-│       └── train.json
-│       └── test.json
-├── Instruction_Type2
-│   └── GQA
-│       └── train.json
-│       └── test.json
-```
+Note: You need to modify the data path in all the scripts to your own path.
 
-## Instruction Tuning
+
+
+## MR-LoRA training and evaluation
 First, downloading the pretrained projectors in [LLaVA Model_Zoo](https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md).
 
 Setting `pretrain_mm_mlp_adapter` to the projector path.
@@ -96,35 +160,84 @@ We provide the scripts of our train order in `scripts/*/Train`.
 Note, the `output_dir` of the previous script is the `previous_task_model_path` of the next training process.
 Then, you could tune these datasets in your order.
 
-We provide scripts for training MOELoRA with LLaVA in `scripts/LLaVA/Train_MOE`. Additionally, you can modify the code to train MiniGPT-V2 and Qwen-VL, following the example in lines 138-152 of `ETrain/Models/LLaVA/utils.py`.
+1. Train the expert LoRA independently using the scripts in Train_dom_single folder or Train_ability_single folder. For example
+```
+bash scripts/LLaVA/Train_dom_single/12_Sci.sh 
+```
+2. Use the checkpoints of LoRA to get cross-task evaluation results. For example, in domain continual learning, you should test 25 times.
+```
+bash scripts/LLaVA/Eval_dom/1_eval_remotesensing.sh "" ./checkpoints/LLaVA/CoIN/Sci_llava_lora Sci_rs
+bash scripts/LLaVA/Eval_dom/2_eval_medical.sh "" ./checkpoints/LLaVA/CoIN/Sci_llava_lora Sci_pathvqa
+bash scripts/LLaVA/Eval_dom/3_eval_drivelm.sh "" ./checkpoints/LLaVA/CoIN/Sci_llava_lora Sci_drivelm
+bash scripts/LLaVA/Eval_dom/4_eval_sci.sh "" ./checkpoints/LLaVA/CoIN/Sci_llava_lora Sci_sci
+bash scripts/LLaVA/Eval_dom/5_eval_financial.sh "" ./checkpoints/LLaVA/CoIN/Sci_llava_lora Sci_fin
+``` 
+3. Train the router LoRA
+```
+bash scripts/LLaVA/Train_dom_single/0_train_router.sh
+```
+4. Use the router LoRA to select the final results
+```
+bash scripts/LLaVA/Train_dom/0_eval_router.sh Med pathvqa
+bash scripts/LLaVA/Train_dom/0_eval_router.sh AD drivelm
+bash scripts/LLaVA/Train_dom/0_eval_router.sh Sci sci
+bash scripts/LLaVA/Train_dom/0_eval_router.sh Fin fin
+bash scripts/LLaVA/Train_dom/0_eval_router.sh RS rs
+```
 
-## Evaluation
-We have prepared the scripts to evaluate the trained model in `scripts/*/Eval`.
 
-These scripts will evalute the trained model and create the prompts (`prompt_to_eval.json`) for evaluating the general knowldege.
 
-To evaluate the general knowldege, you could add the result path to `scripts/Eval_GeneralKnowledge/eval_prompt_slim.sh` and run it, this script file will output a score to indicate the general knowledge.
+You can use the checkpoints in huggingface and [modelscope](https://www.modelscope.cn/collections/MR_LoRA-87d01a9a337944) to test MR-LoRA directly. 
 
-## To Do
-1. - [x] Evaluating on more MLLM, MiniGPT-4, ~~MiniGPT-V2~~, InstrctBlip, ~~Qwen-VL~~; MiniGPT-V2, Qwen-VL have been merged. In addition, since MiniGPT-4 and InstrctBlip are based on LAVIS resp, you can modify the config to train with these model.
-2. - [] Evaluating on different size of MLLM; We are conducting experiments with larger model, 13b llava.
-3. - [] Evaluating on full finetune.
+## LoRA and MoE LoRA training and evaluation
+We have prepared the scripts to train and evaluate model in `scripts/*/Train_dom`, `scripts/*/Eval_dom`, `scripts/*/Train_ability`, `scripts/*/Eval_ability`.
+```
+# lora train sequential training
+bash scripts/LLaVA/Train_dom/1_RemoteSensing.sh 
+bash scripts/LLaVA/Train_dom/2_Medical.sh "" True
+bash scripts/LLaVA/Train_dom/3_DriveLM.sh "" True
+bash scripts/LLaVA/Train_dom/4_Sci.sh "" True
+bash scripts/LLaVA/Train_dom/5_Financial.sh "" True
+
+# MoELoRA training
+bash scripts/LLaVA/Train_dom/1_RemoteSensing.sh  Finetune-CL-MoE "" 8
+bash scripts/LLaVA/Train_dom/2_Medical.sh  Finetune-CL-MoE True 8
+bash scripts/LLaVA/Train_dom/3_DriveLM.sh  Finetune-CL-MoE True 8
+bash scripts/LLaVA/Train_dom/4_Sci.sh Finetune-CL-MoE True 8
+bash scripts/LLaVA/Train_dom/5_Financial.sh Finetune-CL-MoE True 8
+```
+
+Evaluation
+```
+# lora evaluation
+bash scripts/LLaVA/Eval_dom/1_eval_remotesensing.sh  Finetune "./checkpoints/LLaVA/Finetune-CL/FinVis_llava_lora" Fin_rs FineTune-CL-Test
+bash scripts/LLaVA/Eval_dom/2_eval_medical.sh Finetune "./checkpoints/LLaVA/Finetune-CL/FinVis_llava_lora" Fin_med FineTune-CL-Test
+bash scripts/LLaVA/Eval_dom/3_eval_drivelm.sh Finetune "./checkpoints/LLaVA/Finetune-CL/FinVis_llava_lora" Fin_drivelm FineTune-CL-Test
+bash scripts/LLaVA/Eval_dom/4_eval_sci.sh Finetune "./checkpoints/LLaVA/Finetune-CL/FinVis_llava_lora" Fin_sci FineTune-CL-Test
+bash scripts/LLaVA/Eval_dom/5_eval_financial.sh Finetune "./checkpoints/LLaVA/Finetune-CL/FinVis_llava_lora" Fin_fin FineTune-CL-Test
+
+# MoELoRA evaluation
+bash scripts/LLaVA/Eval_dom/1_eval_remotesensing.sh  Finetune "./checkpoints/LLaVA/Finetune-CL-MoE/FinVis_llava_lora_MOE" Fin_rs FineTune-CL-MoE-Test
+bash scripts/LLaVA/Eval_dom/2_eval_medical.sh Finetune "./checkpoints/LLaVA/Finetune-CL-MoE/FinVis_llava_lora_MOE" Fin_med FineTune-CL-MoE-Test
+bash scripts/LLaVA/Eval_dom/3_eval_drivelm.sh Finetune "./checkpoints/LLaVA/Finetune-CL-MoE/FinVis_llava_lora_MOE" Fin_drivelm FineTune-CL-MoE-Test
+bash scripts/LLaVA/Eval_dom/4_eval_sci.sh Finetune "./checkpoints/LLaVA/Finetune-CL-MoE/FinVis_llava_lora_MOE" Fin_sci FineTune-CL-MoE-Test
+bash scripts/LLaVA/Eval_dom/5_eval_financial.sh Finetune "./checkpoints/LLaVA/Finetune-CL-MoE/FinVis_llava_lora_MOE" Fin_fin FineTune-CL-MoE-Test
+```
 
 ## Citation
 ```
-@misc{chen2024coin,
-    title={CoIN: A Benchmark of Continual Instruction tuNing for Multimodel Large Language Model}, 
-    author={Cheng Chen and Junchen Zhu and Xu Luo and Hengtao Shen and Lianli Gao and Jingkuan Song},
-    year={2024},
-    eprint={2403.08350},
-    archivePrefix={arXiv},
-    primaryClass={cs.CV}
-}
+
 ```
 
 ## Acknowledgement
 [LLaVA](https://github.com/haotian-liu/LLaVA): the codebase we built upon, and our base model LLaVA-1.5-7b that has the amazing vision-language capabilities!
 
-[LAVIS](https://github.com/salesforce/LAVIS): the codebase MiniGPT and InstructBlip are built upon.
+[CoIN](https://github.com/zackschen/CoIN): the codebase we built upon.
 
-[MiniGPT](https://github.com/Vision-CAIR/MiniGPT-4.git): the codebase of MinigGPT and MinitGPT-v2.
+## LICENSE
+```
+This project is licensed under the terms of the Apache-2.0 license.
+```
+
+## Contact
+Please contact us or post an issue if you have any questions.

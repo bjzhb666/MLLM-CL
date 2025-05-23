@@ -45,7 +45,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --pretrain_mm_mlp_adapter ./checkpoints/LLaVA/Vicuna/vicuna-7b-v.15-projector/mm_projector.bin \
     --version $PROMPT_VERSION \
     --data_path $DATA_PATH/Sci/train.json \
-    --image_folder $DATA_PATH \
+    --image_folder $DATA_PATH/Sci \
     --vision_tower ./checkpoints/LLaVA/clip-vit-large-patch14-336 \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
@@ -54,7 +54,7 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --image_aspect_ratio pad \
     --group_by_modality_length True \
     --bf16 True \
-    --output_dir ./checkpoints/LLaVA/$BASE_NAME/Sci_llava_lora_ep3 \
+    --output_dir ./checkpoints/LLaVA/$BASE_NAME/Sci_llava_lora_ep3_new \
     --num_train_epochs 3 \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 16 \
@@ -72,4 +72,4 @@ deepspeed --include localhost:0,1,2,3,4,5,6,7 --master_port 29600 ETrain/Train/L
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
     --report_to wandb \
-    --run_name "LoRA_Sci_bs4ac2_lr2e-5-ep3"
+    --run_name "LoRA_Sci_bs4ac2_lr2e-5-ep3-new"
