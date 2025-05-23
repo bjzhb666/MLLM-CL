@@ -1,8 +1,26 @@
+
+
 # MLLM-CL: Continual Learning for Multimodal Large Language Models
 ![MLLM-CL Benchmark](image.png)
+@import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false}
 
-<!-- TOC -->autoauto- [MLLM-CL: Continual Learning for Multimodal Large Language Models](#mllm-cl-continual-learning-for-multimodal-large-language-models)auto    - [MLLM-CL Benchmark](#mllm-cl-benchmark)auto        - [Domain Continual Learning](#domain-continual-learning)auto        - [Ability Continual Learning](#ability-continual-learning)auto    - [MR-LoRA](#mr-lora)auto    - [Installation](#installation)auto    - [Dataset](#dataset)auto    - [MR-LoRA training and evaluation](#mr-lora-training-and-evaluation)auto    - [LoRA and MoE LoRA training and evaluation](#lora-and-moe-lora-training-and-evaluation)auto    - [Citation](#citation)auto    - [Acknowledgement](#acknowledgement)auto    - [LICENSE](#license)auto    - [Contact](#contact)autoauto<!-- /TOC -->
+<!-- code_chunk_output -->
 
+- [MLLM-CL: Continual Learning for Multimodal Large Language Models](#mllm-cl-continual-learning-for-multimodal-large-language-models)
+  - [MLLM-CL Benchmark](#mllm-cl-benchmark)
+    - [Domain Continual Learning](#domain-continual-learning)
+    - [Ability Continual Learning](#ability-continual-learning)
+  - [MR-LoRA](#mr-lora)
+  - [Installation](#installation)
+  - [Dataset](#dataset)
+  - [MR-LoRA training and evaluation](#mr-lora-training-and-evaluation)
+  - [LoRA and MoE LoRA training and evaluation](#lora-and-moe-lora-training-and-evaluation)
+  - [Citation](#citation)
+  - [Acknowledgement](#acknowledgement)
+  - [LICENSE](#license)
+  - [Contact](#contact)
+
+<!-- /code_chunk_output -->
 
 This is the official repo of MLLM-CL and MR-LoRA. MLLM-CL is a novel benchmark encompassing domain and ability continual learning, where the former focuses on independently and identically distributed (IID) evaluation across evolving mainstream domains, whereas the latter evaluates on non-IID scenarios with emerging model ability. MR-LoRA prevents catastrophic interference through parameter isolation and an MLLM-based routing mechanism. For more details, please refer to: 
 
