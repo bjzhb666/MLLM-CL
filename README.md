@@ -15,10 +15,11 @@ MLLM-CL is a benchmark for continual learning in multimodal large language model
 Continually adding domain knowledge is crucial for constructing a powerful MLLM.
 
 To achieve this goal, we propose domain continual learning and choose five mainstream and common domains: remote sensing, medical, science, autonomous driving and finance.
-In domain continual learning, the training 
+In domain continual learning, the training set and test set are IID.
 ### Ability Continual Learning
 Domain continual learning assumes that training and test data are IID.
 However, achieving IID between training and test sets is often challenging in real-world scenarios.
+In ability continual learning, we assume that the training and test data are non-IID.
 
 We select four fundamental abilities for the MLLM to learn sequentially: OCR, math \& logic, visual perception and GUI agent.
 
@@ -30,8 +31,8 @@ Our MR-LoRA performs two-stage inference for a given multimodal input, consistin
 ## Installation
 1. Clone this repository and navigate to CoIN folder
 ``` 
-git clone https://github.com/bjzhb666/Coin.git
-cd CoIN 
+git clone https://github.com/bjzhb666/MLLM-CL.git
+cd MLLM-CL
 ```
 2. Install Package
 ```
