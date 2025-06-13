@@ -19,12 +19,13 @@
   - [Acknowledgement](#acknowledgement)
   - [LICENSE](#license)
   - [Contact](#contact)
+  - [About us](#about-us)
 
 <!-- /code_chunk_output -->
 
 This is the official repo of MLLM-CL and MR-LoRA. MLLM-CL is a novel benchmark encompassing domain and ability continual learning, where the former focuses on independently and identically distributed (IID) evaluation across evolving mainstream domains, whereas the latter evaluates on non-IID scenarios with emerging model ability. MR-LoRA prevents catastrophic interference through parameter isolation and an MLLM-based routing mechanism. For more details, please refer to: 
 
-**MLLM-CL: Continual Learning for Multimodal Large Language Models** [[paper]()].
+**MLLM-CL: Continual Learning for Multimodal Large Language Models** [[paper](https://arxiv.org/abs/2506.05453)].
 
 [‪Hongbo Zhao](https://scholar.google.com/citations?user=Gs22F0UAAAAJ&hl=zh-CN), [Fei Zhu](https://impression2805.github.io/), Rundong Wang, [‪Gaofeng Meng](https://scholar.google.com/citations?hl=zh-CN&user=5hti_r0AAAAJ), [‪Zhaoxiang Zhang‬](https://scholar.google.com/citations?hl=zh-CN&user=qxWfV6cAAAAJ)
 
@@ -106,8 +107,9 @@ LMUData=/data/hongbo_zhao/code/VLMEvalKit/LMUData
 ```
 
 ## Dataset
-Please download the images of MLLM-CL from huggingface or modelscope: 
-[modelscope](https://www.modelscope.cn/datasets/zhaohongbo/MLLM-CL/summary)
+Please download the images of MLLM-CL from huggingface or modelscope: [[huggingface](https://huggingface.co/datasets/Impression2805/MLLM-CL)] or
+[[modelscope](https://www.modelscope.cn/datasets/zhaohongbo/MLLM-CL/summary)].
+
 After downloading all of them, organize the data as follows:
 
 Domain Continual Learning Data:
@@ -208,7 +210,7 @@ bash scripts/LLaVA/Train_dom/0_eval_router.sh RS rs
 
 
 
-You can use the checkpoints in huggingface and [modelscope](https://www.modelscope.cn/collections/MR_LoRA-87d01a9a337944) to test MR-LoRA directly. 
+You can use the checkpoints in [huggingface](https://huggingface.co/Impression2805/MR-LoRA) and [modelscope](https://www.modelscope.cn/collections/MR_LoRA-87d01a9a337944) to test MR-LoRA directly. 
 
 ## LoRA and MoE LoRA training and evaluation
 We have prepared the scripts to train and evaluate model in `scripts/*/Train_dom`, `scripts/*/Eval_dom`, `scripts/*/Train_ability`, `scripts/*/Eval_ability`.
@@ -248,13 +250,19 @@ bash scripts/LLaVA/Eval_dom/5_eval_financial.sh Finetune "./checkpoints/LLaVA/Fi
 Note: For the GUI agent task in ability continual learning, the final results are in a tsv file and you should submit it to the [evaluation server](https://eval.ai/web/challenges/challenge-page/2328/overview). The evaluation server will return the final results.
 ## Citation
 ```
-
+@article{zhao2025mllm,
+  title={MLLM-CL: Continual Learning for Multimodal Large Language Models},
+  author={Zhao, Hongbo and Zhu, Fei and Wang, Rundong and Meng, Gaofeng and Zhang, Zhaoxiang},
+  journal={arXiv preprint arXiv:2506.05453},
+  year={2025}
+}
 ```
 
 ## Acknowledgement
 [LLaVA](https://github.com/haotian-liu/LLaVA): the codebase we built upon, and our base model LLaVA-1.5-7b that has the amazing vision-language capabilities!
 
-[CoIN](https://github.com/zackschen/CoIN): the codebase we built upon.
+[CoIN](https://github.com/zackschen/CoIN), [VLMEvalKit](https://github.com/open-compass/VLMEvalKit): the codebase we built upon.
+
 
 ## LICENSE
 ```
@@ -263,3 +271,5 @@ This project is licensed under the terms of the Apache-2.0 license.
 
 ## Contact
 Please contact us or post an issue if you have any questions.
+
+## About us
