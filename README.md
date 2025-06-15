@@ -19,7 +19,7 @@
   - [Acknowledgement](#acknowledgement)
   - [LICENSE](#license)
   - [Contact](#contact)
-  - [About us](#about-us)
+  - [About us: MLLM-CL Community](#about-us-mllm-cl-community)
 
 <!-- /code_chunk_output -->
 
@@ -272,4 +272,9 @@ This project is licensed under the terms of the Apache-2.0 license.
 ## Contact
 Please contact us or post an issue if you have any questions.
 
-## About us
+## About us: MLLM-CL Community
+We are the members from [MLLM-CL](https://huggingface.co/MLLM-CL), an open-source community focus on Continual learning of Multimodal Large Language Models. 
+We aim to construct a continuously evolving multimodal large language model (MLLM) system.
+If you are interested in our community and want to join us, feel free to contact us in github or email.
+- We are looking for contributors, collaborators and partners to build a better MLLM-CL community.
+- We are also looking for sponsors to support our community and projects. If you are interested in sponsoring us, please contact us.
