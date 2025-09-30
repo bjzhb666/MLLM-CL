@@ -1,0 +1,6 @@
+{
+  "train_path": "/data/hongbo_zhao/data/Domain_data/Fin/train.json",
+  "test_path": "/data/hongbo_zhao/data/Domain_data/Fin/test.json",
+  "train_folder": "/data/hongbo_zhao/data/Domain_data/Fin",
+  "test_folder": "/data/hongbo_zhao/data/Domain_data/Fin"
+}

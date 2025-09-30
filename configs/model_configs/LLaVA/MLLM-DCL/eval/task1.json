@@ -1,0 +1,6 @@
+{
+  "gpu_num": 8,
+  "stage": "LoRA-task1",
+  "model_path": "/home/hongbo_zhao/ghy-cl-codebase/MCITlib/checkpoints/MLLM-DCL/LLaVA-1.5/MR-LoRA/Task1_llava_lora",
+  "model_base": "/home/hongbo_zhao/ghy-cl-codebase/llava-v1.5-7b"
+}
