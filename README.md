@@ -211,7 +211,7 @@ This project is licensed under the terms of the Apache-2.0 license.
 Please contact us or post an issue if you have any questions.
 
 ## About us: MLLM-CL Community
-We are the members from [MLLM-CL(hf)](https://huggingface.co/MLLM-CL) [MLLM-CL(modelscope)](https://www.modelscope.cn/organization/MLLM-CL), an open-source community focus on Continual learning of Multimodal Large Language Models. 
+We are the members from [MLLM-CL(hf)](https://huggingface.co/MLLM-CL), [MLLM-CL(modelscope)](https://www.modelscope.cn/organization/MLLM-CL), an open-source community focus on Continual learning of Multimodal Large Language Models. 
 We aim to construct a continuously evolving multimodal large language model (MLLM) system.
 If you are interested in our community and want to join us, feel free to contact us on GitHub or by email.
 - We are looking for contributors, collaborators and partners to build a better MLLM-CL community.
