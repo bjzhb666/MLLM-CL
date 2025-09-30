@@ -154,7 +154,7 @@ We provide the scripts of our train order in `scripts/Train`.
 bash scripts/Train/train_DCL.sh 
 ```
 3. Train the router LoRA
-Before training the router LoRA, you should modify the configs about the router (`data_configs_router, model_configs_router`). Then use the command to train the router LoRA.
+Before training the router LoRA, you should modify the configs about the router (`data_configs_router, model_configs_router`). Then use the command to train the router LoRA. You can get the router training data and replay data in [huggingface](https://huggingface.co/datasets/MLLM-CL/MLLM-CL-ReplayData) or [modelscope](https://www.modelscope.cn/datasets/MLLM-CL/mllmcl-replaydata).
 ```
 bash scripts/Train/train_DCL_router.sh
 ```
