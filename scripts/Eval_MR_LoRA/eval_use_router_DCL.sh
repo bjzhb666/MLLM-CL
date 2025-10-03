@@ -24,7 +24,7 @@ else
 fi
 
 if [ ! -n "$4" ] ;then
-    MODELPATH='/home/hongbo_zhao/ghy-cl-codebase/MCITlib/checkpoints/MLLM-DCL/LLaVA-1.5/MR-LoRA-router/Task5_llava_lora'
+    MODELPATH='/home/hongbo_zhao/ghy-cl-codebase/MCITlib/checkpoints/MLLM-DCL/InternVL/MR-LoRA-router/Task5_internvl_lora'
 else
     MODELPATH=$4
 fi
@@ -36,7 +36,7 @@ fi
 # fi
 
 RESULT_DIR="results/DCL/RouterFinal_$STAGE/$DATASET/$(basename $MODELPATH)" # 我们方法结果保存路径
-# ALL_RESULT_DIR="results/CoIN/RANK$RANK" 
+# ALL_RESULT_DIR="results/CoIN/RANK$RANK"
 ALL_RESULT_DIR="results/DCL/model_dataset" # 25个结果路径
 DATA_PATH=/data/hongbo_zhao/data/Domain_data
 
@@ -45,7 +45,7 @@ IMAGE_FOLDER=$DATA_PATH/$DATASET
 for IDX in $(seq 0 $((CHUNKS-1))); do
     CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m llava.eval.model_agent_select_lora_DCL \
         --model-path $MODELPATH \
-        --model-base /home/hongbo_zhao/ghy-cl-codebase/llava-v1.5-7b \
+        --model-base /home/hongbo_zhao/ghy-cl-codebase/InternVL-Chat-ViT-6B-Vicuna-7B \
         --question-file $DATA_PATH/$DATASET/test.json \
         --image-folder $IMAGE_FOLDER  \
         --result-folders $ALL_RESULT_DIR \
@@ -83,29 +83,29 @@ if [ $QF == "RS" ]; then
     python -m llava.eval.CoIN.eval_ai2d \
         --annotation-file $DATA_PATH/$DATASET/test.json \
         --result-file $output_file \
-        --output-dir $RESULT_DIR 
+        --output-dir $RESULT_DIR
 
 elif [ $QF == "AD" ]; then
     python -m llava.eval.CoIN.eval_ai2d \
         --annotation-file $DATA_PATH/$DATASET/test.json \
         --result-file $output_file \
-        --output-dir $RESULT_DIR 
+        --output-dir $RESULT_DIR
 
 elif [ $QF == "Med" ]; then
     python -m llava.eval.CoIN.eval_pvqa \
         --annotation-file $DATA_PATH/$DATASET/test.json \
         --result-file $output_file \
-        --output-dir $RESULT_DIR 
+        --output-dir $RESULT_DIR
 
 elif [ $QF == "Fin" ]; then
    python -m llava.eval.CoIN.eval_finvis \
         --annotation-file $DATA_PATH/$DATASET/test.json \
         --result-file $output_file \
-        --output-dir $RESULT_DIR 
+        --output-dir $RESULT_DIR
 
 elif [ $QF == "Sci" ]; then
     python -m llava.eval.CoIN.eval_sci \
         --annotation-file $DATA_PATH/$DATASET/test.json \
         --result-file $output_file \
-        --output-dir $RESULT_DIR 
+        --output-dir $RESULT_DIR
 fi

@@ -24,7 +24,7 @@ else
 fi
 
 if [ ! -n "$4" ] ;then
-    MODELPATH='checkpoints/Router_Ability/Router_llava_lora_5e-6-ep30' 
+    MODELPATH='checkpoints/Router_Ability/Router_llava_lora_5e-6-ep30'
 else
     MODELPATH=$4
 fi
@@ -45,7 +45,7 @@ IMAGE_FOLDER=$DATA_PATH/$DATASET
 for IDX in $(seq 0 $((CHUNKS-1))); do
     CUDA_VISIBLE_DEVICES=${GPULIST[$IDX]} python -m llava.eval.model_agent_select_lora_ACL \
         --model-path $MODELPATH \
-        --model-base /home/hongbo_zhao/ghy-cl-codebase/llava-v1.5-7b \
+        --model-base /home/hongbo_zhao/ghy-cl-codebase/InternVL-Chat-ViT-6B-Vicuna-7B \
         --question-file $DATA_PATH/$DATASET/test.json \
         --image-folder $IMAGE_FOLDER  \
         --result-folders $ALL_RESULT_DIR \

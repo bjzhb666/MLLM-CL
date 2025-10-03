@@ -1,0 +1,12 @@
+{
+  "gpu_num": 8,
+  "rank": 32,
+  "model_name": "/home/hongbo_zhao/ghy-cl-codebase/InternVL-Chat-ViT-6B-Vicuna-7B",
+  "mm_projector": "/home/hongbo_zhao/ghy-cl-codebase/InternVL-Chat-ViT-6B-Vicuna-7B/mm_projector.bin",
+  "vision_tower": "/home/hongbo_zhao/ghy-cl-codebase/InternViT-6B-224px",
+  "output_dir": "/home/hongbo_zhao/ghy-cl-codebase/MCITlib/checkpoints/MLLM-ACL/InternVL/MR-LoRA/Task1_internvl_lora",
+  "epoch": 3,
+  "batch_size": 16,
+  "grad_acc": 1,
+  "lr": 2e-4
+}

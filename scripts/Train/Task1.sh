@@ -2,7 +2,6 @@
 
 ################## VICUNA ##################
 PROMPT_VERSION=v1
-MODEL_VERSION="vicuna-7b-v1.5"
 ################## VICUNA ##################
 
 MODEL_CONFIG=$1
@@ -19,6 +18,7 @@ w_default() {
     echo "${custom_value:-$default_value}" 
 }
 
+NNODES=${NNODES:-1}
 GPU_NUM=$(read_config "$MODEL_CONFIG" gpu_num)
 RANK=$(read_config "$MODEL_CONFIG" rank)
 MODEL_NAME=$(read_config "$MODEL_CONFIG" model_name)
@@ -41,14 +41,10 @@ for i in $(seq 0 $((GPU_NUM-1))); do
 done
 GPU_LIST=${GPU_LIST%,}
 
-################## LLaMA-2 ##################
-# PROMPT_VERSION="llava_llama_2"
-# MODEL_VERSION="Llama-2-7b-chat-hf"
-################## LLaMA-2 ##################
-
-deepspeed --include localhost:$GPU_LIST --master_port 9001 llava/train/train_mem.py \
+echo "Begin running..."
+torchrun --nnodes=${NNODES} --nproc_per_node=${GPU_NUM} --master_port 9001 llava/train/train_mem.py \
     --deepspeed ./scripts/zero2.json \
-    --lora_enable True --lora_r $RANK --lora_alpha $((RANK * 2)) --mm_projector_lr 2e-5 \
+    --lora_enable True --lora_r $RANK --lora_alpha $((RANK * 2)) \
     --model_name_or_path $MODEL_NAME \
     --pretrain_mm_mlp_adapter $MM_PROJECTOR \
     --version $PROMPT_VERSION \
@@ -56,7 +52,7 @@ deepspeed --include localhost:$GPU_LIST --master_port 9001 llava/train/train_mem
     --image_folder $IMAGE \
     --vision_tower $VISION_TOWER \
     --mm_projector_type mlp2x_gelu \
-    --mm_vision_select_layer -2 \
+    --mm_vision_select_layer -4 \
     --mm_use_im_start_end False \
     --mm_use_im_patch_token False \
     --image_aspect_ratio pad \
