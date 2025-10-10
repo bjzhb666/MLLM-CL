@@ -28,4 +28,4 @@ from .p_tuning import (
 )
 from .prefix_tuning import PrefixEncoder, PrefixTuningConfig
 from .prompt_tuning import PromptEmbedding, PromptTuningConfig, PromptTuningInit
-from .clitmoelora import CoINMOELoraConfig, CoINMOELoraModel
+from .coinmoelora import CoINMOELoraConfig, CoINMOELoraModel, CoINMOELoraLinear

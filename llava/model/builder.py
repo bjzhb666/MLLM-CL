@@ -12,10 +12,11 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import sys
 
+sys.path.append("/mnt/haiyangguo/mywork/CL-MLLM/MCITlib/InternVL/LoRA-FT")
 import os
 import shutil
-import sys
 import warnings
 
 import torch
@@ -33,8 +34,6 @@ from llava.constants import (
 )
 from llava.model import *
 
-sys.path.append("/your_path/LoRA")
-
 
 def load_pretrained_model(
     model_path,
@@ -44,12 +43,8 @@ def load_pretrained_model(
     load_4bit=False,
     device_map="auto",
     device="cuda",
-    **kwargs,
 ):
-    kwargs = {"device_map": device_map, **kwargs}
-
-    if device != "cuda":
-        kwargs["device_map"] = {"": device}
+    kwargs = {"device_map": device_map}
 
     if load_8bit:
         kwargs["load_in_8bit"] = True
@@ -64,7 +59,7 @@ def load_pretrained_model(
     else:
         kwargs["torch_dtype"] = torch.float16
 
-    if "llava" in model_name.lower():
+    if "llava" in model_name.lower() or "intern" in model_name.lower():
         # Load LLaVA model
         if "lora" in model_name.lower() and model_base is None:
             warnings.warn(
@@ -120,14 +115,13 @@ def load_pretrained_model(
                 }
             model.load_state_dict(non_lora_trainables, strict=False)
 
-            from CoIN.peft import PeftModel
+            from peft import PeftModel
 
             print("Loading LoRA weights...")
-            if "visual" not in model_name:
-                model = PeftModel.from_pretrained(model, model_path)
-                print("Merging LoRA weights...")
-                model = model.merge_and_unload()
-                print("Model is loaded...")
+            model = PeftModel.from_pretrained(model, model_path)
+            print("Merging LoRA weights...")
+            model = model.merge_and_unload()
+            print("Model is loaded...")
         elif model_base is not None:
             # this may be mm projector only
             print("Loading LLaVA from base model...")
@@ -141,7 +135,7 @@ def load_pretrained_model(
                 cfg_pretrained = AutoConfig.from_pretrained(
                     model_path, trust_remote_code=True
                 )
-                model = LlavaMPTForCausalLM.from_pretrained(
+                model = LlavaMptForCausalLM.from_pretrained(
                     model_base, low_cpu_mem_usage=True, config=cfg_pretrained, **kwargs
                 )
             else:
@@ -161,7 +155,7 @@ def load_pretrained_model(
         else:
             if "mpt" in model_name.lower():
                 tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
-                model = LlavaMPTForCausalLM.from_pretrained(
+                model = LlavaMptForCausalLM.from_pretrained(
                     model_path, low_cpu_mem_usage=True, **kwargs
                 )
             else:
@@ -173,11 +167,14 @@ def load_pretrained_model(
         # Load language model
         if model_base is not None:
             # PEFT model
-            from CoIN.peft import PeftModel
+            from peft import PeftModel
 
             tokenizer = AutoTokenizer.from_pretrained(model_base, use_fast=False)
             model = AutoModelForCausalLM.from_pretrained(
-                model_base, low_cpu_mem_usage=True, **kwargs
+                model_base,
+                torch_dtype=torch.float16,
+                low_cpu_mem_usage=True,
+                device_map="auto",
             )
             print(f"Loading LoRA weights from {model_path}")
             model = PeftModel.from_pretrained(model, model_path)
@@ -200,7 +197,7 @@ def load_pretrained_model(
 
     image_processor = None
 
-    if "llava" in model_name.lower():
+    if "llava" in model_name.lower() or "intern" in model_name.lower():
         mm_use_im_start_end = getattr(model.config, "mm_use_im_start_end", False)
         mm_use_im_patch_token = getattr(model.config, "mm_use_im_patch_token", True)
         if mm_use_im_patch_token:
@@ -214,10 +211,6 @@ def load_pretrained_model(
         vision_tower = model.get_vision_tower()
         if not vision_tower.is_loaded:
             vision_tower.load_model()
-        if "visual" in model_name.lower():
-            print("Adding visual LoRA")
-            model = PeftModel.from_pretrained(model, model_path)
-            model = model.merge_and_unload()
         vision_tower.to(device=device, dtype=torch.float16)
         image_processor = vision_tower.image_processor
 

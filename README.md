@@ -65,8 +65,8 @@ pip install -e ".[train]" -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simpl
 conda install git
 pip install flash-attn==2.7.0.post2 --no-build-isolation -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 
-huggingface-cli download liuhaotian/llava-v1.5-7b --local-dir checkpoints/LLaVA/Vicuna/llava-7b-v1.5
-huggingface-cli download openai/clip-vit-large-patch14-336 --local-dir checkpoints/LLaVA/clip-vit-large-patch14-336
+huggingface-cli download OpenGVLab/InternViT-6B-224px --local-dir checkpoints/InternVL/InternViT-6B-224px
+huggingface-cli download OpenGVLab/InternVL-Chat-ViT-6B-Vicuna-7B --local-dir checkpoints/InternVL/InternVL-Chat-ViT-6B-Vicuna-7B
 ```
 4. Prepare the API key
 The evaluation of Math & Logic tasks requires the OpenAI API key.

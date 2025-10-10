@@ -92,7 +92,7 @@ class CustomDataset(Dataset):
                 ]
             )
         for i in range(len(self.ans)):
-            self.ans[i] = {x["question_id"]: x for x in self.ans[i]}
+            self.ans[i] = {str(x["question_id"]): x for x in self.ans[i]}
 
         qs = []  # questions with answers, each question is a dict with keys: question_id, text, image(optional),
         # ans (a list of answers for all models), answer (GT answer)
@@ -339,9 +339,7 @@ if __name__ == "__main__":
     parser.add_argument("--result-folders", type=str, default="results/CoIN/LLaVA")
     parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
     parser.add_argument(
-        "--model-base",
-        type=str,
-        default="/home/hongbo_zhao/ghy-cl-codebase/llava-v1.5-7b",
+        "--model-base", type=str, default="checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5"
     )
     parser.add_argument("--image-folder", type=str, default="")
     parser.add_argument("--question-file", type=str, default="tables/question.jsonl")

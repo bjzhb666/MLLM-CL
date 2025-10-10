@@ -1,6 +1,6 @@
 import dataclasses
 from enum import Enum, auto
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 
 class SeparatorStyle(Enum):
@@ -11,6 +11,8 @@ class SeparatorStyle(Enum):
     MPT = auto()
     PLAIN = auto()
     LLAMA_2 = auto()
+    CHATINTERN = auto()
+    INTERNVL_ZH = auto()
 
 
 @dataclasses.dataclass
@@ -25,6 +27,10 @@ class Conversation:
     sep: str = "###"
     sep2: str = None
     version: str = "Unknown"
+    # Stop criteria (the default one is EOS token)
+    stop_str: Union[str, List[str]] = None
+    # Stops generation if meeting any token in this list
+    stop_token_ids: List[int] = None
 
     skip_next: bool = False
 
@@ -60,6 +66,18 @@ class Conversation:
                     ret += role + ": " + message + seps[i % 2]
                 else:
                     ret += role + ":"
+        elif self.sep_style == SeparatorStyle.CHATINTERN:
+            # source: https://huggingface.co/internlm/internlm-chat-7b-8k/blob/bd546fa984b4b0b86958f56bf37f94aa75ab8831/modeling_internlm.py#L771
+            seps = [self.sep, self.sep2]
+            ret = self.system
+            for i, (role, message) in enumerate(messages):
+                if i % 2 == 0:
+                    ret += "<s>"
+                if message:
+                    ret += role + ":" + message + seps[i % 2] + "\n"
+                else:
+                    ret += role + ":"
+            return ret
         elif self.sep_style == SeparatorStyle.MPT:
             ret = self.system + self.sep
             for role, message in messages:
@@ -101,6 +119,15 @@ class Conversation:
                     ret += message + seps[i % 2]
                 else:
                     ret += ""
+        elif self.sep_style == SeparatorStyle.INTERNVL_ZH:
+            seps = [self.sep, self.sep2]
+            ret = self.system + seps[0]
+            for i, (role, message) in enumerate(messages):
+                if message:
+                    ret += role + ": " + message + seps[i % 2]
+                else:
+                    ret += role + ":"
+            return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
@@ -109,7 +136,7 @@ class Conversation:
     def append_message(self, role, message):
         self.messages.append([role, message])
 
-    def get_images(self, return_pil=False):
+    def get_images(self, return_pil=False, return_org=False):
         images = []
         for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
@@ -120,6 +147,8 @@ class Conversation:
                     from PIL import Image
 
                     msg, image, image_process_mode = msg
+                    org_image = image.copy()
+                    print(f"image_process_mode: {image_process_mode}")
                     if image_process_mode == "Pad":
 
                         def expand2square(pil_img, background_color=(122, 116, 104)):
@@ -148,23 +177,34 @@ class Conversation:
                         raise ValueError(
                             f"Invalid image_process_mode: {image_process_mode}"
                         )
-                    max_hw, min_hw = max(image.size), min(image.size)
-                    aspect_ratio = max_hw / min_hw
-                    max_len, min_len = 800, 400
-                    shortest_edge = int(min(max_len / aspect_ratio, min_len, min_hw))
-                    longest_edge = int(shortest_edge * aspect_ratio)
-                    W, H = image.size
-                    if longest_edge != max(image.size):
-                        if H > W:
-                            H, W = longest_edge, shortest_edge
-                        else:
-                            H, W = shortest_edge, longest_edge
-                        image = image.resize((W, H))
+
+                    resize_image_flag = False
+                    if resize_image_flag:
+                        max_hw, min_hw = max(image.size), min(image.size)
+                        aspect_ratio = max_hw / min_hw
+                        max_len, min_len = 896, 448
+                        shortest_edge = int(
+                            min(max_len / aspect_ratio, min_len, min_hw)
+                        )
+                        longest_edge = int(shortest_edge * aspect_ratio)
+                        W, H = image.size
+                        if longest_edge != max(image.size):
+                            if H > W:
+                                H, W = longest_edge, shortest_edge
+                            else:
+                                H, W = shortest_edge, longest_edge
+                            image = image.resize((W, H))
                     if return_pil:
-                        images.append(image)
+                        if return_org:
+                            images.append(image)
+                        else:
+                            images.append(org_image)
                     else:
                         buffered = BytesIO()
-                        image.save(buffered, format="PNG")
+                        if return_org:
+                            org_image.save(buffered, format="JPEG")
+                        else:
+                            image.save(buffered, format="PNG")
                         img_b64_str = base64.b64encode(buffered.getvalue()).decode()
                         images.append(img_b64_str)
         return images
@@ -211,6 +251,8 @@ class Conversation:
             sep=self.sep,
             sep2=self.sep2,
             version=self.version,
+            stop_str=self.stop_str,
+            stop_token_ids=self.stop_token_ids,
         )
 
     def dict(self):
@@ -281,6 +323,20 @@ conv_vicuna_v1 = Conversation(
     sep_style=SeparatorStyle.TWO,
     sep=" ",
     sep2="</s>",
+)
+
+# Internlm-chat template
+conv_internlm = Conversation(
+    system="A chat between a curious <|User|> and an <|Bot|>. The <|Bot|> gives helpful, detailed, and polite answers to the <|User|>'s questions.\n\n",
+    roles=("<|User|>", "<|Bot|>"),
+    version="internlm",
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.CHATINTERN,
+    sep="<eoh>",
+    sep2="<eoa>",
+    stop_token_ids=[1, 103028],
+    stop_str="<|User|>",
 )
 
 conv_llama_2 = Conversation(
@@ -376,7 +432,47 @@ conv_llava_v1_mmtag = Conversation(
     version="v1_mmtag",
 )
 
-default_conversation = conv_vicuna_v1
+internvl_zh = Conversation(
+    system="",
+    roles=("<human>", "<bot>"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.INTERNVL_ZH,
+    sep=" ",
+    sep2="</s>",
+)
+
+hermes2 = Conversation(
+    system="<|im_start|>system\nAnswer the questions.",
+    roles=("<|im_start|>user\n", "<|im_start|>assistant\n"),
+    version="mpt",
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.MPT,
+    sep="<|im_end|>",
+)
+
+internlm2_chat = Conversation(
+    system="<|im_start|>system\nYou are an AI assistant whose name is InternLM (书生·浦语).",
+    roles=("<|im_start|>user\n", "<|im_start|>assistant\n"),
+    version="mpt",
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.MPT,
+    sep="<|im_end|>",
+)
+
+phi3_chat = Conversation(
+    system="<|system|>\nYou are an AI assistant whose name is Phi-3.",
+    roles=("<|user|>\n", "<|assistant|>\n"),
+    version="mpt",
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.MPT,
+    sep="<|end|>",
+)
+
+default_conversation = conv_vicuna_v0
 conv_templates = {
     "default": conv_vicuna_v0,
     "v0": conv_vicuna_v0,
@@ -391,6 +487,11 @@ conv_templates = {
     "v1_mmtag": conv_llava_v1_mmtag,
     "llava_llama_2": conv_llava_llama_2,
     "mpt": conv_mpt,
+    "internlm": conv_internlm,
+    "internvl_zh": internvl_zh,
+    "Hermes-2": hermes2,
+    "internlm2-chat": internlm2_chat,
+    "phi3-chat": phi3_chat,
 }
 
 

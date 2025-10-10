@@ -163,9 +163,10 @@ class ModulesToSaveWrapper(torch.nn.Module):
 
 def _get_submodules(model, key):
     parent = model.get_submodule(".".join(key.split(".")[:-1]))
+    layer = key.split(".")[2]
     target_name = key.split(".")[-1]
     target = model.get_submodule(key)
-    return parent, target, target_name
+    return parent, target, target_name, layer
 
 
 def _freeze_adapter(model, adapter_name):
@@ -181,7 +182,7 @@ def _set_trainable(model, adapter_name):
             key.endswith(target_key) for target_key in model.modules_to_save
         )
         if target_module_found:
-            parent, target, target_name = _get_submodules(model, key)
+            parent, target, target_name, layer = _get_submodules(model, key)
             if isinstance(target, ModulesToSaveWrapper):
                 target.update(adapter_name)
             else:

@@ -2,15 +2,11 @@ import os
 from typing import List, Optional
 
 import torch
+from peft.utils import WEIGHTS_NAME, set_peft_model_state_dict
 from torch.utils.data import Sampler
 from transformers import Trainer
 from transformers.trainer import (
-    ALL_LAYERNORM_LAYERS,
-    ShardedDDPOption,
-    get_parameter_names,
     has_length,
-    is_sagemaker_mp_enabled,
-    logger,
 )
 
 
@@ -77,6 +73,9 @@ def get_modality_length_grouped_indices(
     mm_indices, mm_lengths = zip(*[(i, l) for i, l in enumerate(lengths) if l > 0])
     lang_indices, lang_lengths = zip(*[(i, -l) for i, l in enumerate(lengths) if l < 0])
 
+    assert len(mm_indices) > 0, "Should have at least one multimodal sample."
+    assert len(lang_indices) > 0, "Should have at least one language sample."
+
     mm_shuffle = [
         mm_indices[i]
         for i in get_length_grouped_indices(
@@ -106,8 +105,12 @@ def get_modality_length_grouped_indices(
     megabatch_indices = torch.randperm(len(megabatches), generator=generator)
     megabatches = [megabatches[i] for i in megabatch_indices]
 
+    if len(additional_batch) >= megabatch_size:
+        megabatches = [additional_batch[:megabatch_size]] + megabatches
+        additional_batch = additional_batch[megabatch_size:]
+
     if len(additional_batch) > 0:
-        megabatches.append(sorted(additional_batch))
+        megabatches.append(additional_batch)
 
     return [i for megabatch in megabatches for i in megabatch]
 
@@ -179,149 +182,15 @@ class LLaVATrainer(Trainer):
 
         if self.args.group_by_modality_length:
             lengths = self.train_dataset.modality_lengths
-            if self.args.is_SAT:
-                lengths = self.train_dataset.modality_lengths_for_SAT
             return LengthGroupedSampler(
+                # self.args.train_batch_size * self.args.gradient_accumulation_steps, # TODO: seems that we should not have gradient_accumulation_steps
                 self.args.train_batch_size,
-                world_size=self.args.world_size * self.args.gradient_accumulation_steps,
+                world_size=self.args.world_size,
                 lengths=lengths,
                 group_by_modality=True,
             )
         else:
             return super()._get_train_sampler()
-
-    def create_optimizer(self):
-        """
-        Setup the optimizer.
-
-        We provide a reasonable default that works well. If you want to use something else, you can pass a tuple in the
-        Trainer's init through `optimizers`, or subclass and override this method in a subclass.
-        """
-        if is_sagemaker_mp_enabled():
-            return super().create_optimizer()
-        if self.sharded_ddp == ShardedDDPOption.SIMPLE:
-            return super().create_optimizer()
-
-        opt_model = self.model
-
-        if self.optimizer is None:
-            decay_parameters = get_parameter_names(opt_model, ALL_LAYERNORM_LAYERS)
-            decay_parameters = [name for name in decay_parameters if "bias" not in name]
-            if self.args.mm_projector_lr is not None:
-                projector_parameters = [
-                    name
-                    for name, _ in opt_model.named_parameters()
-                    if "mm_projector" in name
-                ]
-                optimizer_grouped_parameters = [
-                    {
-                        "params": [
-                            p
-                            for n, p in opt_model.named_parameters()
-                            if (
-                                n in decay_parameters
-                                and n not in projector_parameters
-                                and p.requires_grad
-                            )
-                        ],
-                        "weight_decay": self.args.weight_decay,
-                    },
-                    {
-                        "params": [
-                            p
-                            for n, p in opt_model.named_parameters()
-                            if (
-                                n not in decay_parameters
-                                and n not in projector_parameters
-                                and p.requires_grad
-                            )
-                        ],
-                        "weight_decay": 0.0,
-                    },
-                    {
-                        "params": [
-                            p
-                            for n, p in opt_model.named_parameters()
-                            if (
-                                n in decay_parameters
-                                and n in projector_parameters
-                                and p.requires_grad
-                            )
-                        ],
-                        "weight_decay": self.args.weight_decay,
-                        "lr": self.args.mm_projector_lr,
-                    },
-                    {
-                        "params": [
-                            p
-                            for n, p in opt_model.named_parameters()
-                            if (
-                                n not in decay_parameters
-                                and n in projector_parameters
-                                and p.requires_grad
-                            )
-                        ],
-                        "weight_decay": 0.0,
-                        "lr": self.args.mm_projector_lr,
-                    },
-                ]
-            else:
-                optimizer_grouped_parameters = [
-                    {
-                        "params": [
-                            p
-                            for n, p in opt_model.named_parameters()
-                            if (n in decay_parameters and p.requires_grad)
-                        ],
-                        "weight_decay": self.args.weight_decay,
-                    },
-                    {
-                        "params": [
-                            p
-                            for n, p in opt_model.named_parameters()
-                            if (n not in decay_parameters and p.requires_grad)
-                        ],
-                        "weight_decay": 0.0,
-                    },
-                ]
-
-            optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(
-                self.args
-            )
-
-            if self.sharded_ddp == ShardedDDPOption.SIMPLE:
-                self.optimizer = OSS(
-                    params=optimizer_grouped_parameters,
-                    optim=optimizer_cls,
-                    **optimizer_kwargs,
-                )
-            else:
-                self.optimizer = optimizer_cls(
-                    optimizer_grouped_parameters, **optimizer_kwargs
-                )
-                if optimizer_cls.__name__ == "Adam8bit":
-                    import bitsandbytes
-
-                    manager = bitsandbytes.optim.GlobalOptimManager.get_instance()
-
-                    skipped = 0
-                    for module in opt_model.modules():
-                        if isinstance(module, nn.Embedding):
-                            skipped += sum(
-                                {
-                                    p.data_ptr(): p.numel() for p in module.parameters()
-                                }.values()
-                            )
-                            logger.info(f"skipped {module}: {skipped / 2**20}M params")
-                            manager.register_module_override(
-                                module, "weight", {"optim_bits": 32}
-                            )
-                            logger.debug(
-                                f"bitsandbytes: will optimize {module} in fp32"
-                            )
-                    logger.info(f"skipped: {skipped / 2**20}M params")
-
-        return self.optimizer
 
     def _save_checkpoint(self, model, trial, metrics=None):
         if getattr(self.args, "tune_mm_mlp_adapter", False):
@@ -337,9 +206,14 @@ class LLaVATrainer(Trainer):
             if getattr(self.args, "use_im_start_end", False):
                 keys_to_match.extend(["embed_tokens", "embed_in"])
 
+            # also save pos embedding
+            if getattr(self.args, "tune_vit_pos_embedding", False):
+                keys_to_match.extend(["vision_tower.embeddings.position_embedding"])
+
             weight_to_save = get_mm_adapter_state_maybe_zero_3(
                 self.model.named_parameters(), keys_to_match
             )
+            print("weight to save:", weight_to_save.keys())
 
             if self.args.local_rank == 0 or self.args.local_rank == -1:
                 self.model.config.save_pretrained(output_dir)
@@ -354,3 +228,52 @@ class LLaVATrainer(Trainer):
             pass
         else:
             super(LLaVATrainer, self)._save(output_dir, state_dict)
+
+
+def load_model_from_previous_task(model, previous_task_model_path):
+    print("Loading additional LLaVA/Intern weights...")
+    if os.path.exists(
+        os.path.join(previous_task_model_path, "non_lora_trainables.bin")
+    ):
+        non_lora_trainables = torch.load(
+            os.path.join(previous_task_model_path, "non_lora_trainables.bin"),
+            map_location="cpu",
+        )
+    else:
+        # this is probably from HF Hub
+        from huggingface_hub import hf_hub_download
+
+        def load_from_hf(repo_id, filename, subfolder=None):
+            cache_file = hf_hub_download(
+                repo_id=repo_id, filename=filename, subfolder=subfolder
+            )
+            return torch.load(cache_file, map_location="cpu")
+
+        non_lora_trainables = load_from_hf(
+            previous_task_model_path, "non_lora_trainables.bin"
+        )
+    non_lora_trainables = {
+        (k[11:] if k.startswith("base_model.") else k): v
+        for k, v in non_lora_trainables.items()
+    }
+    if any(k.startswith("model.model.") for k in non_lora_trainables):
+        non_lora_trainables = {
+            (k[6:] if k.startswith("model.") else k): v
+            for k, v in non_lora_trainables.items()
+        }
+
+    model.base_model.model.load_state_dict(non_lora_trainables, strict=False)
+    # model.load_state_dict(non_lora_trainables, strict=False)
+
+    from peft import PeftModel
+
+    print("Loading LoRA weights...")
+    filename = os.path.join(previous_task_model_path, WEIGHTS_NAME)
+    adapters_weights = torch.load(
+        filename,
+        map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+    )
+    load_result = set_peft_model_state_dict(
+        model, adapters_weights, adapter_name="default"
+    )
+    print("Model is loaded...")

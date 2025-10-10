@@ -21,8 +21,9 @@ from typing import Dict, List
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from peft.utils.config import PeftConfig, PeftType
-from peft.utils.other import _freeze_adapter, _get_submodules
+
+from CoIN.peft.utils.config import PeftConfig, PeftType
+from CoIN.peft.utils.other import _freeze_adapter, _get_submodules
 
 
 def llama_rotate_half(x: torch.Tensor) -> torch.Tensor:

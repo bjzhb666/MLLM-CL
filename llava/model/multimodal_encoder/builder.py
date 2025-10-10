@@ -14,6 +14,7 @@ def build_vision_tower(vision_tower_cfg, **kwargs):
         is_absolute_path_exists
         or vision_tower.startswith("openai")
         or vision_tower.startswith("laion")
+        or "intern" in vision_tower.lower()
     ):
         return CLIPVisionTower(vision_tower, args=vision_tower_cfg, **kwargs)
 

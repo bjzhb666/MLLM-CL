@@ -25,13 +25,11 @@ import sys
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence
 
-import deepspeed
 import torch
 import transformers
 
 sys.path.append("/your_path/LLaVA-LoRA")
 
-from peft.utils import WEIGHTS_NAME, set_peft_model_state_dict
 from PIL import Image, ImageFile
 from torch.utils.data import Dataset
 
@@ -45,8 +43,7 @@ from llava.constants import (
 )
 from llava.mm_utils import tokenizer_image_token
 from llava.model import *
-from llava.model.utils import find_all_vision_linear_names
-from llava.train.llava_trainer import LLaVATrainer
+from llava.train.llava_trainer import LLaVATrainer, load_model_from_previous_task
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS = None
@@ -66,6 +63,7 @@ class ModelArguments:
     version: Optional[str] = field(default="v0")
     freeze_backbone: bool = field(default=False)
     tune_mm_mlp_adapter: bool = field(default=False)
+    tune_vit_pos_embedding: bool = field(default=False)
     vision_tower: Optional[str] = field(default=None)
     mm_vision_select_layer: Optional[int] = field(
         default=-1
@@ -75,8 +73,6 @@ class ModelArguments:
     mm_use_im_start_end: bool = field(default=False)
     mm_use_im_patch_token: bool = field(default=True)
     mm_vision_select_feature: Optional[str] = field(default="patch")
-    # new add
-    use_vision_lora: bool = field(default=False)
 
 
 @dataclass
@@ -84,13 +80,11 @@ class DataArguments:
     data_path: str = field(
         default=None, metadata={"help": "Path to the training data."}
     )
-    memory_data_path: str = field(
-        default=None, metadata={"help": "Path to the memory data."}
-    )
     lazy_preprocess: bool = False
     is_multimodal: bool = False
     image_folder: Optional[str] = field(default=None)
     image_aspect_ratio: str = "square"
+    image_grid_pinpoints: Optional[str] = field(default=None)
 
 
 @dataclass
@@ -99,6 +93,7 @@ class TrainingArguments(transformers.TrainingArguments):
     optim: str = field(default="adamw_torch")
     remove_unused_columns: bool = field(default=False)
     freeze_mm_mlp_adapter: bool = field(default=False)
+    freeze_llm: bool = field(default=False)
     mpt_attn_impl: Optional[str] = field(default="triton")
     model_max_length: int = field(
         default=512,
@@ -125,12 +120,7 @@ class TrainingArguments(transformers.TrainingArguments):
     lora_dropout: float = 0.05
     lora_weight_path: str = ""
     lora_bias: str = "none"
-    mm_projector_lr: Optional[float] = None
     group_by_modality_length: bool = field(default=False)
-    is_SAT: bool = field(
-        default=False,
-        metadata={"help": "whether SAT data (different group_by_modality_length)"},
-    )
 
 
 def maybe_zero_3(param, ignore_status=False, name=None):
@@ -201,15 +191,10 @@ def get_mm_adapter_state_maybe_zero_3(named_params, keys_to_match):
 def find_all_linear_names(model):
     cls = torch.nn.Linear
     lora_module_names = set()
-    multimodal_keywords = ["mm_projector", "vision_tower", "vision_resampler"]
-    # The model here is llavallama, no vision_tower and vision model in it.
     for name, module in model.named_modules():
-        if any(mm_keyword in name for mm_keyword in multimodal_keywords):
-            continue
         if isinstance(module, cls):
             names = name.split(".")
-            # lora_module_names.add(names[0] if len(names) == 1 else names[-1])
-            lora_module_names.add(name)
+            lora_module_names.add(names[0] if len(names) == 1 else names[-1])
 
     if "lm_head" in lora_module_names:  # needed for 16-bit
         lora_module_names.remove("lm_head")
@@ -225,9 +210,14 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
         if getattr(trainer.args, "use_im_start_end", False):
             keys_to_match.extend(["embed_tokens", "embed_in"])
 
+        # also save pos embedding
+        if getattr(trainer.args, "tune_vit_pos_embedding", False):
+            keys_to_match.extend(["vision_tower.embeddings.position_embedding"])
+
         weight_to_save = get_mm_adapter_state_maybe_zero_3(
             trainer.model.named_parameters(), keys_to_match
         )
+        print("weight to save:", weight_to_save.keys())
         trainer.model.config.save_pretrained(output_dir)
 
         current_folder = output_dir.split("/")[-1]
@@ -528,9 +518,18 @@ def preprocess_v1(
                 round_len = len(tokenizer(rou).input_ids)
                 instruction_len = len(tokenizer(parts[0]).input_ids) - 2
 
-            target[cur_len : cur_len + instruction_len] = IGNORE_INDEX
+            if i != 0 and not tokenizer.legacy:  # compatible with transformers==4.32.0
+                # The legacy and non-legacy modes handle special tokens differently
+                instruction_len -= 1
 
+            # Ignore the user instructions
+            target[cur_len : cur_len + instruction_len] = IGNORE_INDEX
             cur_len += round_len
+
+            if i != 0 and not tokenizer.legacy:  # compatible with transformers==4.32.0
+                # The legacy and non-legacy modes handle special tokens differently
+                cur_len -= 1
+
         target[cur_len:] = IGNORE_INDEX
 
         if cur_len < tokenizer.model_max_length:
@@ -724,14 +723,6 @@ class LazySupervisedDataset(Dataset):
         super(LazySupervisedDataset, self).__init__()
         list_data_dict = json.load(open(data_path, "r"))
 
-        if data_args.memory_data_path is not None:
-            rank0_print("Adding memory data... {}".format(data_args.memory_data_path))
-            list_memory_data_dict = json.load(open(data_args.memory_data_path, "r"))
-
-            list_data_dict = list_data_dict + list_memory_data_dict
-
-            random.shuffle(list_data_dict)
-
         rank0_print("Formatting inputs...Skip in lazy mode")
         self.tokenizer = tokenizer
         self.list_data_dict = list_data_dict
@@ -762,113 +753,82 @@ class LazySupervisedDataset(Dataset):
             length_list.append(cur_len)
         return length_list
 
-    @property
-    def modality_lengths_for_SAT(self):
-        length_list = []
-        for sample in self.list_data_dict:
-            cur_len = sum(
-                len(conv["value"].split()) for conv in sample["conversations"]
-            )
-            cur_len = cur_len if isinstance(sample["image"], list) else -cur_len
-            length_list.append(cur_len)
-        return length_list
-
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
-        sources = self.list_data_dict[i]
-        if isinstance(i, int):
-            sources = [sources]
-        assert len(sources) == 1, "Don't know why it is wrapped to a list"  # FIXME
-        if "image" in sources[0]:
-            image_file = self.list_data_dict[i]["image"]
-            image_folder = self.data_args.image_folder
-            processor = self.data_args.image_processor
-
-            if isinstance(image_file, list):
-                image = []
-                for img_file in image_file:
-                    image.append(
-                        Image.open(os.path.join(image_folder, img_file)).convert("RGB")
+        flag = False
+        while not flag:
+            try:
+                sources = self.list_data_dict[i]
+                if isinstance(i, int):
+                    sources = [sources]
+                assert len(sources) == 1, (
+                    "Don't know why it is wrapped to a list"
+                )  # FIXME
+                if "image" in sources[0]:
+                    image_file = self.list_data_dict[i]["image"]
+                    image_folder = self.data_args.image_folder
+                    processor = self.data_args.image_processor
+                    image = Image.open(os.path.join(image_folder, image_file)).convert(
+                        "RGB"
                     )
-            else:
-                image = Image.open(os.path.join(image_folder, image_file)).convert(
-                    "RGB"
-                )
-            if self.data_args.image_aspect_ratio == "pad":
+                    if self.data_args.image_aspect_ratio == "pad":
 
-                def expand2square(pil_img, background_color):
-                    width, height = pil_img.size
-                    if width == height:
-                        return pil_img
-                    elif width > height:
-                        result = Image.new(
-                            pil_img.mode, (width, width), background_color
-                        )
-                        result.paste(pil_img, (0, (width - height) // 2))
-                        return result
-                    else:
-                        result = Image.new(
-                            pil_img.mode, (height, height), background_color
-                        )
-                        result.paste(pil_img, ((height - width) // 2, 0))
-                        return result
+                        def expand2square(pil_img, background_color):
+                            width, height = pil_img.size
+                            if width == height:
+                                return pil_img
+                            elif width > height:
+                                result = Image.new(
+                                    pil_img.mode, (width, width), background_color
+                                )
+                                result.paste(pil_img, (0, (width - height) // 2))
+                                return result
+                            else:
+                                result = Image.new(
+                                    pil_img.mode, (height, height), background_color
+                                )
+                                result.paste(pil_img, ((height - width) // 2, 0))
+                                return result
 
-                if isinstance(image, list):
-                    image = [
-                        expand2square(
-                            img, tuple(int(x * 255) for x in processor.image_mean)
+                        image = expand2square(
+                            image, tuple(int(x * 255) for x in processor.image_mean)
                         )
-                        for img in image
-                    ]
-                    image = [
-                        processor.preprocess(img, return_tensors="pt")["pixel_values"][
-                            0
-                        ]
-                        for img in image
-                    ]
-                else:
-                    image = expand2square(
-                        image, tuple(int(x * 255) for x in processor.image_mean)
-                    )
-                    try:
                         image = processor.preprocess(image, return_tensors="pt")[
                             "pixel_values"
                         ][0]
-                    except Exception as e:
-                        print("Wrong image", image_folder, image_file)
-                        print(e)
-                        raise e
-            else:
-                if isinstance(image, list):
-                    image = [
-                        processor.preprocess(img, return_tensors="pt")["pixel_values"][
-                            0
-                        ]
-                        for img in image
-                    ]
+                    else:
+                        image = processor.preprocess(image, return_tensors="pt")[
+                            "pixel_values"
+                        ][0]
+                    sources = preprocess_multimodal(
+                        copy.deepcopy([e["conversations"] for e in sources]),
+                        self.data_args,
+                    )
                 else:
-                    image = processor.preprocess(image, return_tensors="pt")[
-                        "pixel_values"
-                    ][0]
-            sources = preprocess_multimodal(
-                copy.deepcopy([e["conversations"] for e in sources]), self.data_args
-            )
-        else:
-            sources = copy.deepcopy([e["conversations"] for e in sources])
-        data_dict = preprocess(
-            sources, self.tokenizer, has_image=("image" in self.list_data_dict[i])
-        )
-        if isinstance(i, int):
-            data_dict = dict(
-                input_ids=data_dict["input_ids"][0], labels=data_dict["labels"][0]
-            )
+                    sources = copy.deepcopy([e["conversations"] for e in sources])
+                data_dict = preprocess(
+                    sources,
+                    self.tokenizer,
+                    has_image=("image" in self.list_data_dict[i]),
+                )
+                if isinstance(i, int):
+                    data_dict = dict(
+                        input_ids=data_dict["input_ids"][0],
+                        labels=data_dict["labels"][0],
+                    )
 
-        # image exist in the data
-        if "image" in self.list_data_dict[i]:
-            data_dict["image"] = image
-        elif self.data_args.is_multimodal:
-            # image does not exist in the data, but the model is multimodal
-            crop_size = self.data_args.image_processor.crop_size
-            data_dict["image"] = torch.zeros(3, crop_size["height"], crop_size["width"])
+                # image exist in the data
+                if "image" in self.list_data_dict[i]:
+                    data_dict["image"] = image
+                elif self.data_args.is_multimodal:
+                    # image does not exist in the data, but the model is multimodal
+                    crop_size = self.data_args.image_processor.crop_size
+                    data_dict["image"] = torch.zeros(
+                        3, crop_size["height"], crop_size["width"]
+                    )
+                flag = True
+            except Exception as e:
+                print(e)
+                i = random.randint(0, len(self.list_data_dict) - 1)
         return data_dict
 
 
@@ -898,14 +858,10 @@ class DataCollatorForSupervisedDataset(object):
 
         if "image" in instances[0]:
             images = [instance["image"] for instance in instances]
-            if isinstance(images[0], list):
-                images = torch.stack([torch.stack(img, dim=0) for img in images], dim=0)
-                batch["images"] = images
+            if all(x is not None and x.shape == images[0].shape for x in images):
+                batch["images"] = torch.stack(images)
             else:
-                if all(x is not None and x.shape == images[0].shape for x in images):
-                    batch["images"] = torch.stack(images)
-                else:
-                    batch["images"] = images
+                batch["images"] = images
 
         return batch
 
@@ -923,59 +879,7 @@ def make_supervised_data_module(
     )
 
 
-def load_model_from_previous_task(model, previous_task_model_path):
-    token_num, tokem_dim = model.lm_head.out_features, model.lm_head.in_features
-    # if model.lm_head.weight.shape[0] != token_num:
-    #     model.lm_head.weight = torch.nn.Parameter(torch.empty(token_num, tokem_dim, device=model.device, dtype=model.dtype))
-    #     model.model.embed_tokens.weight = torch.nn.Parameter(torch.empty(token_num, tokem_dim, device=model.device, dtype=model.dtype))
-
-    print("Loading additional LLaVA weights...")
-    if os.path.exists(
-        os.path.join(previous_task_model_path, "non_lora_trainables.bin")
-    ):
-        non_lora_trainables = torch.load(
-            os.path.join(previous_task_model_path, "non_lora_trainables.bin"),
-            map_location="cpu",
-        )
-    else:
-        # this is probably from HF Hub
-        from huggingface_hub import hf_hub_download
-
-        def load_from_hf(repo_id, filename, subfolder=None):
-            cache_file = hf_hub_download(
-                repo_id=repo_id, filename=filename, subfolder=subfolder
-            )
-            return torch.load(cache_file, map_location="cpu")
-
-        non_lora_trainables = load_from_hf(
-            previous_task_model_path, "non_lora_trainables.bin"
-        )
-    non_lora_trainables = {
-        (k[11:] if k.startswith("base_model.") else k): v
-        for k, v in non_lora_trainables.items()
-    }
-    if any(k.startswith("model.model.") for k in non_lora_trainables):
-        non_lora_trainables = {
-            (k[6:] if k.startswith("model.") else k): v
-            for k, v in non_lora_trainables.items()
-        }
-    model.base_model.model.load_state_dict(non_lora_trainables, strict=False)
-
-    from peft import PeftModel
-
-    print("Loading LoRA weights...")
-    filename = os.path.join(previous_task_model_path, WEIGHTS_NAME)
-    adapters_weights = torch.load(
-        filename,
-        map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-    )
-    load_result = set_peft_model_state_dict(
-        model, adapters_weights, adapter_name="default"
-    )
-    print("Model is loaded...")
-
-
-def train():
+def train(attn_implementation=None):
     global local_rank
 
     parser = transformers.HfArgumentParser(
@@ -983,6 +887,9 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     local_rank = training_args.local_rank
+    training_args._frozen = False  # compatible with transformers==4.32.0
+    data_args._frozen = False  # compatible with transformers==4.32.0
+    model_args._frozen = False  # compatible with transformers==4.32.0
     compute_dtype = (
         torch.float16
         if training_args.fp16
@@ -1001,7 +908,6 @@ def train():
                 quantization_config=BitsAndBytesConfig(
                     load_in_4bit=training_args.bits == 4,
                     load_in_8bit=training_args.bits == 8,
-                    llm_int8_skip_modules=["mm_projector"],
                     llm_int8_threshold=6.0,
                     llm_int8_has_fp16_weight=False,
                     bnb_4bit_compute_dtype=compute_dtype,
@@ -1017,7 +923,7 @@ def train():
                 model_args.model_name_or_path, trust_remote_code=True
             )
             config.attn_config["attn_impl"] = training_args.mpt_attn_impl
-            model = LlavaMPTForCausalLM.from_pretrained(
+            model = LlavaMptForCausalLM.from_pretrained(
                 model_args.model_name_or_path,
                 config=config,
                 cache_dir=training_args.cache_dir,
@@ -1027,12 +933,16 @@ def train():
             model = LlavaLlamaForCausalLM.from_pretrained(
                 model_args.model_name_or_path,
                 cache_dir=training_args.cache_dir,
+                attn_implementation=attn_implementation,
+                torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
                 **bnb_model_from_pretrained_args,
             )
     else:
         model = transformers.LlamaForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
+            attn_implementation=attn_implementation,
+            torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
             **bnb_model_from_pretrained_args,
         )
     model.config.use_cache = False
@@ -1068,7 +978,15 @@ def train():
         lora_config = LoraConfig(
             r=training_args.lora_r,
             lora_alpha=training_args.lora_alpha,
-            target_modules=find_all_linear_names(model),
+            target_modules=[
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "gate_proj",
+                "up_proj",
+                "down_proj",
+            ],  # find_all_linear_names(model),
             lora_dropout=training_args.lora_dropout,
             bias=training_args.lora_bias,
             task_type="CAUSAL_LM",
@@ -1078,8 +996,8 @@ def train():
                 model.to(torch.bfloat16)
             if training_args.fp16:
                 model.to(torch.float16)
-        # rank0_print("Adding LoRA adapters...")
-        # model = get_peft_model(model, lora_config)
+        rank0_print("Adding LoRA adapters...")
+        model = get_peft_model(model, lora_config)
 
     if "mpt" in model_args.model_name_or_path:
         tokenizer = transformers.AutoTokenizer.from_pretrained(
@@ -1094,7 +1012,7 @@ def train():
             cache_dir=training_args.cache_dir,
             model_max_length=training_args.model_max_length,
             padding_side="right",
-            use_fast=True,
+            use_fast=False,
         )
 
     if model_args.version == "v0":
@@ -1117,7 +1035,7 @@ def train():
                 "vicuna_v1"
             ]
 
-    if model_args.vision_tower is not None:  # add vision tower here
+    if model_args.vision_tower is not None:
         model.get_model().initialize_vision_modules(
             model_args=model_args, fsdp=training_args.fsdp
         )
@@ -1128,24 +1046,18 @@ def train():
             device=training_args.device,
         )
 
-        rank0_print(training_args.lora_r, "Adding LoRA adapters...")
-        # add vision peft model
-        if model_args.use_vision_lora:
-            rank0_print(training_args.lora_r, "Adding vision LoRA adapters...")
-            lora_config.target_modules += find_all_vision_linear_names(model)
-        model = get_peft_model(model, lora_config)
-
         data_args.image_processor = vision_tower.image_processor
         data_args.is_multimodal = True
 
         model.config.image_aspect_ratio = data_args.image_aspect_ratio
-        model.config.tokenizer_padding_side = tokenizer.padding_side
-        model.config.tokenizer_model_max_length = tokenizer.model_max_length
+        model.config.image_grid_pinpoints = data_args.image_grid_pinpoints
 
         model.config.tune_mm_mlp_adapter = training_args.tune_mm_mlp_adapter = (
             model_args.tune_mm_mlp_adapter
         )
-        if model_args.tune_mm_mlp_adapter:
+        # freeze llm: only tune mlp layer
+        if model_args.tune_mm_mlp_adapter or training_args.freeze_llm:
+            print("Only tune mlp adapter.")
             model.requires_grad_(False)
             for p in model.get_model().mm_projector.parameters():
                 p.requires_grad = True
@@ -1155,6 +1067,17 @@ def train():
             for p in model.get_model().mm_projector.parameters():
                 p.requires_grad = False
 
+        # tune vit position embedding
+        model.config.tune_vit_pos_embedding = training_args.tune_vit_pos_embedding = (
+            model_args.tune_vit_pos_embedding
+        )
+        if model_args.tune_vit_pos_embedding:
+            print("Tuning ViT position embedding.")
+            for name, p in model.get_model().vision_tower.named_parameters():
+                if "position_embedding" in name:
+                    p.requires_grad = True
+                    print("\tvit pos embedding name: ", name)
+
         if training_args.bits in [4, 8]:
             model.get_model().mm_projector.to(
                 dtype=compute_dtype, device=training_args.device
@@ -1163,7 +1086,6 @@ def train():
         model.config.mm_use_im_start_end = data_args.mm_use_im_start_end = (
             model_args.mm_use_im_start_end
         )
-        model.config.mm_projector_lr = training_args.mm_projector_lr
         training_args.use_im_start_end = model_args.mm_use_im_start_end
         model.config.mm_use_im_patch_token = model_args.mm_use_im_patch_token
         model.initialize_vision_tokenizer(model_args, tokenizer=tokenizer)
@@ -1181,15 +1103,6 @@ def train():
                 if hasattr(module, "weight"):
                     if training_args.bf16 and module.weight.dtype == torch.float32:
                         module = module.to(torch.bfloat16)
-    # open projector weights because of the close by lora
-    for p in model.get_model().mm_projector.parameters():
-        p.requires_grad = True
-
-    # 输出model中可学习的参数
-    rank0_print(f"LoRA rank{training_args.lora_r}", "Learnable Parameters:")
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            rank0_print(training_args.lora_r, name)
 
     if model_args.previous_task_model_path is not None:
         # load model from previous task
@@ -1200,10 +1113,13 @@ def train():
         model=model, tokenizer=tokenizer, args=training_args, **data_module
     )
 
-    # if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
-    #     trainer.train(resume_from_checkpoint=True)
-    # else:
-    trainer.train()
+    trainable_param_names = [n for n, p in model.named_parameters() if p.requires_grad]
+    print("Trainable parameters:\n{}".format(trainable_param_names))
+
+    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
+        trainer.train(resume_from_checkpoint=True)
+    else:
+        trainer.train()
     trainer.save_state()
 
     model.config.use_cache = True

@@ -1,4 +1,3 @@
-import torch
 from transformers import AutoConfig
 
 
@@ -23,16 +22,3 @@ def auto_upgrade(config):
         else:
             print("Checkpoint upgrade aborted.")
             exit(1)
-
-
-def find_all_vision_linear_names(model):
-    cls = torch.nn.Linear
-    lora_module_names = set()
-    multimodal_keywords = "vision_tower.vision_tower.vision_model.encoder.layers"
-    for name, module in model.named_modules():
-        if multimodal_keywords in name and isinstance(module, cls):
-            lora_module_names.add(name)
-    if "lm_head" in lora_module_names:  # needed for 16-bit
-        lora_module_names.remove("lm_head")
-    # import pdb; pdb.set_trace()
-    return list(lora_module_names)

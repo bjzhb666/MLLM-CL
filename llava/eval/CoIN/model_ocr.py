@@ -2,6 +2,7 @@ import argparse
 import json
 import math
 import os
+import random
 
 import shortuuid
 import torch
@@ -125,12 +126,8 @@ def eval_model(args):
 
     with open(os.path.expanduser(args.question_file), "r") as f:
         questions = json.load(f)
-        # 随机打乱顺序
-        import random
-
-        random.seed(0)
-        random.shuffle(questions)
-
+    random.seed(0)
+    random.shuffle(questions)
     questions = get_chunk(questions, args.num_chunks, args.chunk_idx)
     answers_file = os.path.expanduser(args.answers_file)
     os.makedirs(os.path.dirname(answers_file), exist_ok=True)

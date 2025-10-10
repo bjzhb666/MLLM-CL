@@ -93,7 +93,7 @@ class CustomDataset(Dataset):
                 ]
             )
         for i in range(len(self.ans)):
-            self.ans[i] = {x["question_id"]: x for x in self.ans[i]}
+            self.ans[i] = {str(x["question_id"]): x for x in self.ans[i]}
 
         qs = []  # questions with answers, each question is a dict with keys: question_id, text, image(optional),
         # ans (a list of answers for all models), answer (GT answer)

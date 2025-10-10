@@ -541,7 +541,7 @@ class OpenAIWrapper(BaseAPI):
             if key is None:
                 key = env_key
         elif "internvl2-pro" in model:
-            env_key = os.environ.get("InternVL2_PRO_KEY", "")
+            env_key = os.environ.get("LLaVA-1.52_PRO_KEY", "")
             if key is None:
                 key = env_key
         elif "abab" in model:

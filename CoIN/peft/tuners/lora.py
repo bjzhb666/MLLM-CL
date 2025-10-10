@@ -369,7 +369,7 @@ class LoraModel(torch.nn.Module):
                 continue
 
             is_target_modules_in_base_model = True
-            parent, target, target_name = _get_submodules(self.model, key)
+            parent, target, target_name, _ = _get_submodules(self.model, key)
 
             if isinstance(target, LoraLayer) and isinstance(target, torch.nn.Conv2d):
                 target.update_layer_conv2d(
@@ -508,8 +508,8 @@ class LoraModel(torch.nn.Module):
         key_list = [key for key, _ in self.model.named_modules() if "lora" not in key]
         for key in key_list:
             try:
-                parent, target, target_name = _get_submodules(self.model, key)
-            except AttributeError:
+                parent, target, target_name, layer = _get_submodules(self.model, key)
+            except IndexError:
                 continue
             if isinstance(target, LoraLayer):
                 if isinstance(target, nn.Embedding):
