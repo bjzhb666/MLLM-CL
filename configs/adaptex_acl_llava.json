@@ -1,0 +1,49 @@
+{
+  "setting": "ACL",
+  "base_model": "/path/to/llava-v1.5-7b",
+  "mm_projector": "/path/to/llava-v1.5-7b/mm_projector.bin",
+  "vision_tower": "/path/to/clip-vit-large-patch14-336",
+  "data_base_dir": "/path/to/Ability_data",
+  "checkpoint_base": "checkpoints/AdapteX-ACL-LLaVA",
+  "gpu_num": 8,
+  "lora_rank": 32,
+  "affinity_threshold": 0.2,
+  "ewc_lambda": 0.5,
+  "router_lr": 2e-4,
+  "router_epochs": 30,
+  "max_query_samples": 200,
+  "tasks": [
+    {
+      "name": "OCR",
+      "train_path": "/path/to/Ability_data/OCR/train.json",
+      "image_folder": "/path/to/Ability_data/OCR",
+      "lr": 5e-5,
+      "epochs": 3,
+      "batch_size": 8
+    },
+    {
+      "name": "Math",
+      "train_path": "/path/to/Ability_data/Math/train.json",
+      "image_folder": "/path/to/Ability_data/Math",
+      "lr": 2e-4,
+      "epochs": 1,
+      "batch_size": 8
+    },
+    {
+      "name": "VP",
+      "train_path": "/path/to/Ability_data/VP/train.json",
+      "image_folder": "/path/to/Ability_data/VP",
+      "lr": 2e-4,
+      "epochs": 1,
+      "batch_size": 8
+    },
+    {
+      "name": "APP",
+      "train_path": "/path/to/Ability_data/APP/train.json",
+      "image_folder": "/path/to/Ability_data/APP",
+      "lr": 2e-4,
+      "epochs": 3,
+      "batch_size": 8
+    }
+  ]
+}

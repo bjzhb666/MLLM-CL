@@ -1,0 +1,57 @@
+{
+  "setting": "DCL",
+  "base_model": "/path/to/llava-v1.5-7b",
+  "mm_projector": "/path/to/llava-v1.5-7b/mm_projector.bin",
+  "vision_tower": "/path/to/clip-vit-large-patch14-336",
+  "data_base_dir": "/path/to/Domain_data",
+  "checkpoint_base": "checkpoints/AdapteX-DCL-LLaVA",
+  "gpu_num": 8,
+  "lora_rank": 32,
+  "affinity_threshold": 0.2,
+  "ewc_lambda": 0.5,
+  "router_lr": 2e-5,
+  "router_epochs": 30,
+  "max_query_samples": 200,
+  "tasks": [
+    {
+      "name": "RS",
+      "train_path": "/path/to/Domain_data/RS/train.json",
+      "image_folder": "/path/to/Domain_data/RS",
+      "lr": 1e-4,
+      "epochs": 1,
+      "batch_size": 4
+    },
+    {
+      "name": "Med",
+      "train_path": "/path/to/Domain_data/Med/train.json",
+      "image_folder": "/path/to/Domain_data/Med",
+      "lr": 1e-4,
+      "epochs": 3,
+      "batch_size": 4
+    },
+    {
+      "name": "AD",
+      "train_path": "/path/to/Domain_data/AD/train.json",
+      "image_folder": "/path/to/Domain_data/AD",
+      "lr": 1e-4,
+      "epochs": 1,
+      "batch_size": 4
+    },
+    {
+      "name": "Sci",
+      "train_path": "/path/to/Domain_data/Sci/train.json",
+      "image_folder": "/path/to/Domain_data/Sci",
+      "lr": 1e-4,
+      "epochs": 2,
+      "batch_size": 4
+    },
+    {
+      "name": "Fin",
+      "train_path": "/path/to/Domain_data/Fin/train.json",
+      "image_folder": "/path/to/Domain_data/Fin",
+      "lr": 1e-4,
+      "epochs": 1,
+      "batch_size": 4
+    }
+  ]
+}
